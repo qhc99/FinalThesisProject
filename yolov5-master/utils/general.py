@@ -54,7 +54,7 @@ def check_git_status():
             print(s[s.find('Your branch is behind'):s.find('\n\n')] + '\n')
 
 
-def check_requirements(file='requirements.txt'):
+def check_requirements(file='../requirements.txt'):
     # Check installed dependencies meet requirements
     import pkg_resources
     requirements = pkg_resources.parse_requirements(Path(file).open())
