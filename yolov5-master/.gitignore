@@ -6,9 +6,12 @@
 *.avi
 *.data
 *.json
+parameters/
 
 *.cfg
 !cfg/yolov3*.cfg
+venv/*
+venv/
 
 storage.googleapis.com
 runs/*
