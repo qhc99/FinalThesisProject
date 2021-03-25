@@ -4,11 +4,16 @@ from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors, img_resize, img_transform, paint_result
 from utils.general import non_max_suppression
 import os
-import hashlib
+import magic
+
+NEG_IMGS_FOLDER_PATH = "./dataset/TrafficBlockSign/neg/img"
+NEG_T_IMGS_FOLDER_PATH = "./dataset/TrafficBlockSign/neg/t_imgs"
+POS_IMGS_FOLDER_PATH = "./dataset/TrafficBlockSign/pos/img"
+CASCADE_FILE_PATH = "./dataset/TrafficBlockSign/model/cascade.xml"
 
 
 # FPS test
-def FPS_Test(weights_path, conf_thres=0.25, iou_thres=0.45, ):
+def ShowYoloModelResult(weights_path, conf_thres=0.25, iou_thres=0.45, ):
     cap = cv2.VideoCapture(0)
     device = select_device('')
     model = load_model(weights_path, device)
@@ -29,13 +34,12 @@ def FPS_Test(weights_path, conf_thres=0.25, iou_thres=0.45, ):
     cap.release()
 
 
-def ModelCheck():
-    imgs_folder_path = os.getcwd() + "\\dataset\\TrafficBlockSign\\pos\\img"
-    img_names_list = os.listdir(imgs_folder_path)
-    block_sign_cascade_path = "./dataset/TrafficBlockSign/model/cascade.xml"
-    sign_classifier = cv2.CascadeClassifier(block_sign_cascade_path)
+def ShowTrafficSignModelTrainingResult():
+    pos_imgs_folder_path = os.path.join(os.getcwd(), POS_IMGS_FOLDER_PATH)
+    img_names_list = os.listdir(pos_imgs_folder_path)
+    sign_classifier = cv2.CascadeClassifier(CASCADE_FILE_PATH)
     for img_name in img_names_list:
-        img_path = imgs_folder_path + "\\" + img_name
+        img_path = pos_imgs_folder_path + "\\" + img_name
         img = cv2.imread(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -51,59 +55,23 @@ def ModelCheck():
             print(img_path)
 
 
-def GetParamNumNeg(window_size=24):
-    neg_imgs_folder_path = "./dataset/TrafficBlockSign/neg/img"
-    img_names_list = os.listdir(neg_imgs_folder_path)
-    res = 0
-    for img_name in img_names_list:
-        img = cv2.imread(neg_imgs_folder_path + "/" + img_name, cv2.IMREAD_GRAYSCALE)
-        row_count, col_count = img.shape
-        r = row_count // window_size
-        c = col_count // window_size
-        res = res + r * c
-    print("window size: ", window_size)
-    print("availabe neg images in training should be ", res)
-
-
-def ImgFormatCheck():
-    imgs_folder_path = "./dataset/TrafficBlockSign/neg/img"
-    img_names = os.listdir(imgs_folder_path)
+def ImgFormatCheckAndTransform(IMGS_FILE=NEG_IMGS_FOLDER_PATH):
+    img_names = os.listdir(IMGS_FILE)
     for img_name in img_names:
-        img_path = os.path.join(imgs_folder_path, img_name)
-        img = cv2.imread(img_path)
-        if img is None:
+        img_path = os.path.join(IMGS_FILE, img_name)
+        type_info = magic.from_file(img_path)
+        if not type_info.startswith("JPEG"):
             print(img_name)
-
-
-def removeImgDuplicate():
-
-    def md5sum(filename):
-        f = open(filename, 'rb')
-        md5 = hashlib.md5()
-        while True:
-            fb = f.read(8096)
-            if not fb:
-                break
-            md5.update(fb)
-        f.close()
-        return md5.hexdigest()
-    all_md5 = {}
-
-    filedir = os.walk(os.path.join(os.getcwd(), "./dataset/TrafficBlockSign/neg/img"))
-    for i in filedir:
-        for tlie in i[2]:
-            file_path = os.path.join(os.getcwd(), "./dataset/TrafficBlockSign/neg/img", tlie)
-            if md5sum(file_path) in all_md5.values():
-                print(tlie)
-                os.remove(file_path)
-            else:
-                all_md5[tlie] = md5sum(file_path)
+            if type_info.startswith("PNG"):
+                img = cv2.imread(img_path)
+                os.remove(img_path)
+                img_path.replace("png", "jpg")
+                cv2.imwrite(img_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
 
 if __name__ == "__main__":
-    # FPS_Test('parameters/original/yolov5s.pt',)
-    ModelCheck()
-    # GetParamNumNeg()
-    # ImgFormatCheck()
-    # removeImgDuplicate()
+    # ShowYoloModelResult('parameters/original/yolov5s.pt')
+    # ShowTrafficSignModelTrainingResult()
+    # ImgFormatCheckAndTransform()
+
     print("succ")
