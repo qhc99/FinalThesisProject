@@ -4,16 +4,17 @@ from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors, img_resize, img_transform, paint_result
 from utils.general import non_max_suppression
 import os
-import magic
+from skimage import io
+from PIL import Image
 
-NEG_IMGS_FOLDER_PATH = "./dataset/TrafficBlockSign/neg/img"
-NEG_T_IMGS_FOLDER_PATH = "./dataset/TrafficBlockSign/neg/t_imgs"
-POS_IMGS_FOLDER_PATH = "./dataset/TrafficBlockSign/pos/img"
-CASCADE_FILE_PATH = "./dataset/TrafficBlockSign/model/cascade.xml"
+NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg/img"
+NEG_T_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg/t_imgs"
+POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos/img"
+CASCADE_FILE_PATH = "../../dataset/TrafficBlockSign/model/cascade.xml"
 
 
 # FPS test
-def ShowYoloModelResult(weights_path, conf_thres=0.25, iou_thres=0.45, ):
+def RunYoloModel(weights_path, conf_thres=0.25, iou_thres=0.45, ):
     cap = cv2.VideoCapture(0)
     device = select_device('')
     model = load_model(weights_path, device)
@@ -34,7 +35,7 @@ def ShowYoloModelResult(weights_path, conf_thres=0.25, iou_thres=0.45, ):
     cap.release()
 
 
-def ShowTrafficSignModelTrainingResult():
+def RunSignModel():
     pos_imgs_folder_path = os.path.join(os.getcwd(), POS_IMGS_FOLDER_PATH)
     img_names_list = os.listdir(pos_imgs_folder_path)
     sign_classifier = cv2.CascadeClassifier(CASCADE_FILE_PATH)
@@ -55,23 +56,27 @@ def ShowTrafficSignModelTrainingResult():
             print(img_path)
 
 
-def ImgFormatCheckAndTransform(IMGS_FILE=NEG_IMGS_FOLDER_PATH):
+def ImgCheck(IMGS_FILE=NEG_IMGS_FOLDER_PATH):
     img_names = os.listdir(IMGS_FILE)
     for img_name in img_names:
         img_path = os.path.join(IMGS_FILE, img_name)
-        type_info = magic.from_file(img_path)
-        if not type_info.startswith("JPEG"):
+        img = cv2.imread(img_path)
+        shape = img.shape
+        if shape[0] > shape[1]:
             print(img_name)
-            if type_info.startswith("PNG"):
-                img = cv2.imread(img_path)
-                os.remove(img_path)
-                img_path.replace("png", "jpg")
-                cv2.imwrite(img_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        if (shape[0] > 700) or (shape[1] > 700):
+            if shape[0] > shape[1]:
+                factor = shape[0]/600
+            else:
+                factor = shape[1]/600
+            new_img = cv2.resize(img, (int(shape[1]/factor+0.5), int(shape[0]/factor+0.5)))
+            cv2.imshow("t", new_img)
+            cv2.waitKey(500)
 
 
 if __name__ == "__main__":
-    # ShowYoloModelResult('parameters/original/yolov5s.pt')
-    # ShowTrafficSignModelTrainingResult()
-    # ImgFormatCheckAndTransform()
+    # RunYoloModel('parameters/original/yolov5s.pt')
+    # RunSignModel()
+    ImgCheck("../../dataset/TrafficBlockSign/pos/new_imgs")
 
     print("succ")

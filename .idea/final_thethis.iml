@@ -6,6 +6,8 @@
       <excludeFolder url="file://$MODULE_DIR$/yolov5-master/data" />
       <excludeFolder url="file://$MODULE_DIR$/yolov5-master/parameters" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/yolov5-master/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/yolov5-master/.github" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
