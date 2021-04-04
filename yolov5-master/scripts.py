@@ -9,23 +9,19 @@ from utils.general import scale_coords
 from pathlib import Path
 
 
-NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg/img"
-POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos/img"
-MODEL_NUM = 1
-CASCADE_FILE_PATH = "../../dataset/TrafficBlockSign/model" + str(MODEL_NUM) + "/cascade.xml"
+NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
+POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
+POS_HARDIMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/hard_imgs"
+
+MODEL_NUM = 3
+
+# 1: 639
+# 3: 381
+CASCADE_FILE_PATH = "../../dataset/TrafficBlockSign/models/model" + str(MODEL_NUM) + "/cascade.xml"
 
 YOLOV5L_PATH = "./parameters/original/yolov5l.pt"
 YOLOV5M_PATH = "./parameters/original/yolov5m.pt"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
-
-STATIC_GPU_DEVICE = select_device('')
-STATIC_YOLO_MODEL = load_model(YOLOV5S_PATH, STATIC_GPU_DEVICE)
-# 0 1 2 3 5 7
-STATIC_MODEL_OUTPUT_NAMES = get_names(STATIC_YOLO_MODEL)
-STATIC_MODEL_OUTPUT_COLOR = get_colors(STATIC_MODEL_OUTPUT_NAMES)
-cudnn.benchmark = True
-
-STATIC_SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
 
 
 def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_img='', img_window=False, webcam=False):
@@ -43,7 +39,7 @@ def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_im
             # Write results
             # reversed(det)
             for (*xyxy, conf, cls) in reversed(det):
-                if cls in [0, 1, 2, 3, 5, 7]:
+                if cls in {0, 1, 2, 3, 5, 7}:
                     label = f'{names[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
@@ -61,12 +57,19 @@ def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_im
 def RunYoloModel(conf_thres=0.25, iou_thres=0.45, ):
     cap = cv2.VideoCapture(0)
 
+    GPU_DEVICE = select_device('')
+    YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
+    # 0 1 2 3 5 7
+    MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)
+    MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
+    cudnn.benchmark = True
+
     while cap.isOpened():
         _, img = cap.read()
-        tensor_img = img_transform(img_resize(img, 640), STATIC_GPU_DEVICE)
-        pred = STATIC_YOLO_MODEL(tensor_img)[0]
+        tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
+        pred = YOLO_MODEL(tensor_img)[0]
         pred = non_max_suppression(pred, conf_thres, iou_thres)
-        paint_interested_result(pred, tensor_img, img, STATIC_MODEL_OUTPUT_NAMES, STATIC_MODEL_OUTPUT_COLOR)
+        paint_interested_result(pred, tensor_img, img, MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -74,27 +77,33 @@ def RunYoloModel(conf_thres=0.25, iou_thres=0.45, ):
     cap.release()
 
 
-def RunSignModel():
-    pos_imgs_folder_path = os.path.join(os.getcwd(), POS_IMGS_FOLDER_PATH)
+def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False):
+    SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
+    pos_imgs_folder_path = os.path.join(os.getcwd(), IMGS_DIR_PATH)
     img_names_list = os.listdir(pos_imgs_folder_path)
+    count = 0
     for img_name in img_names_list:
         img_path = pos_imgs_folder_path + "\\" + img_name
         img = cv2.imread(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        res = STATIC_SIGN_CLASSIFIER.detectMultiScale(gray)
+        res = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
 
-        for (x, y, w, h) in res:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-        try:
-            cv2.imshow("detect", img)
-            cv2.waitKey(3000)
-        except cv2.error:
-            print(img_path)
+        if len(res) > 0:
+            for (x, y, w, h) in res:
+                cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            print(img_name)
+            count += 1
+            if show:
+                try:
+                    cv2.imshow("detect", img)
+                    cv2.waitKey(4000)
+                except cv2.error:
+                    print(img_path)
+    print(count)
 
 
 if __name__ == "__main__":
-    RunYoloModel()
-    # RunSignModel()
+    # RunYoloModel()
+    RunSignModel(NEG_IMGS_FOLDER_PATH, show=False)
 
     print("end")
