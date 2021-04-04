@@ -13,7 +13,7 @@ NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
 POS_HARDIMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/hard_imgs"
 
-MODEL_NUM = 3
+MODEL_NUM = 2
 
 # 1: 639
 # 3: 381
@@ -107,4 +107,3 @@ if __name__ == "__main__":
     RunSignModel(NEG_IMGS_FOLDER_PATH, show=False)
 
     print("end")
-
