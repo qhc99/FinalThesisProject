@@ -107,3 +107,4 @@ if __name__ == "__main__":
     RunSignModel(NEG_IMGS_FOLDER_PATH, show=False)
 
     print("end")
+
