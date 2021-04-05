@@ -132,11 +132,11 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None)
         while cap.isOpened():
             _, img = cap.read()
 
-            runTwoModelsAndPaint(img,
-                                 YOLO_MODEL, GPU_DEVICE,
-                                 conf_thres, iou_thres,
-                                 MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
-                                 SIGN_CLASSIFIER)
+            predictAndPaint(img,
+                            YOLO_MODEL, GPU_DEVICE,
+                            conf_thres, iou_thres,
+                            MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
+                            SIGN_CLASSIFIER)
 
             cv2.imshow('img', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -148,11 +148,11 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None)
             img_path = os.path.join(imgs_folder_path, img_name)
             img = cv2.imread(img_path)
 
-            yolo_painted, sign_painted = runTwoModelsAndPaint(img,
-                                                              YOLO_MODEL, GPU_DEVICE,
-                                                              conf_thres, iou_thres,
-                                                              MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
-                                                              SIGN_CLASSIFIER)
+            yolo_painted, sign_painted = predictAndPaint(img,
+                                                         YOLO_MODEL, GPU_DEVICE,
+                                                         conf_thres, iou_thres,
+                                                         MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
+                                                         SIGN_CLASSIFIER)
 
             try:
                 if yolo_painted or sign_painted:
@@ -162,11 +162,11 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None)
                 print(img_path)
 
 
-def runTwoModelsAndPaint(img,
-                         YOLO_MODEL, GPU_DEVICE,
-                         conf_thres, iou_thres,
-                         MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
-                         SIGN_CLASSIFIER):
+def predictAndPaint(img,
+                    YOLO_MODEL, GPU_DEVICE,
+                    conf_thres, iou_thres,
+                    MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
+                    SIGN_CLASSIFIER):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # run yolo
