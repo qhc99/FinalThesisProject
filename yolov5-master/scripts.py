@@ -7,7 +7,7 @@ import os
 from utils.plots import plot_one_box
 from utils.general import scale_coords
 from pathlib import Path
-
+import time
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
@@ -39,7 +39,7 @@ def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_im
             # Write results
             # reversed(det)
             for (*xyxy, conf, cls) in reversed(det):
-                if cls in {0, 1, 2, 3, 5, 7}:
+                if int(cls.item()) in {0, 1, 2, 3, 5, 7}:
                     label = f'{names[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
@@ -54,7 +54,7 @@ def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_im
     return origin_img
 
 
-def RunYoloModel(conf_thres=0.25, iou_thres=0.45, ):
+def RunYoloModel(conf_thres=0.25, iou_thres=0.45, compute_exe_time=False):
     cap = cv2.VideoCapture(0)
 
     GPU_DEVICE = select_device('')
@@ -67,9 +67,15 @@ def RunYoloModel(conf_thres=0.25, iou_thres=0.45, ):
     while cap.isOpened():
         _, img = cap.read()
         tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
+        if compute_exe_time:
+            t1 = time.time()
         pred = YOLO_MODEL(tensor_img)[0]
         pred = non_max_suppression(pred, conf_thres, iou_thres)
-        paint_interested_result(pred, tensor_img, img, MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+        if compute_exe_time:
+            t2 = time.time()
+            # noinspection PyUnboundLocalVariable
+            print((t2 - t1) * 1000, "ms")
+        img = paint_interested_result(pred, tensor_img, img, MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
         cv2.imshow('img', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -77,7 +83,7 @@ def RunYoloModel(conf_thres=0.25, iou_thres=0.45, ):
     cap.release()
 
 
-def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False):
+def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False, compute_exe_time=False):
     SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
     pos_imgs_folder_path = os.path.join(os.getcwd(), IMGS_DIR_PATH)
     img_names_list = os.listdir(pos_imgs_folder_path)
@@ -86,7 +92,13 @@ def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False):
         img_path = pos_imgs_folder_path + "\\" + img_name
         img = cv2.imread(img_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if compute_exe_time:
+            t1 = time.time()
         res = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
+        if compute_exe_time:
+            t2 = time.time()
+            # noinspection PyUnboundLocalVariable
+            print((t2 - t1) * 1000, "ms")
 
         if len(res) > 0:
             for (x, y, w, h) in res:
@@ -103,7 +115,7 @@ def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False):
 
 
 if __name__ == "__main__":
-    # RunYoloModel()
-    RunSignModel(NEG_IMGS_FOLDER_PATH, show=False)
+    RunYoloModel()
+    # RunSignModel(POS_IMGS_FOLDER_PATH, show=False, compute_exe_time=True)
 
     print("end")
