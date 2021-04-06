@@ -8,6 +8,7 @@ from utils.plots import plot_one_box
 from utils.general import scale_coords
 from pathlib import Path
 import time
+from enum import Enum
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
@@ -116,9 +117,15 @@ def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False, compute_exe_tim
     print(count)
 
 
-def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None, process_all_imgs=False):
-    if not CAMERA and (IMG_FOLDER_PATH is None):
-        raise Exception
+class ImgsSource(Enum):
+    CAMERA = 0
+    FILE = 1
+    VIDEO = 2
+
+
+def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, process_all_imgs=False):
+    if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
+        raise Exception("path is None")
     SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
     GPU_DEVICE = select_device('')
     YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
@@ -127,7 +134,7 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None,
     MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
     cudnn.benchmark = True
 
-    if CAMERA:
+    if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0)
         count = 0
         store_sign_pred = None
@@ -159,7 +166,7 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None,
             cv2.imshow('camera', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-    else:
+    elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
         img_names_list = os.listdir(imgs_folder_path)
         for img_name in img_names_list:
@@ -170,7 +177,6 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None,
                                                               YOLO_MODEL, GPU_DEVICE,
                                                               conf_thres, iou_thres,
                                                               SIGN_CLASSIFIER)
-
             yolo_painted, sign_painted = paint(img,
                                                sign_pred, yolo_pred, yolo_tensor_img,
                                                MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
@@ -181,6 +187,10 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None,
                     cv2.waitKey(3000)
             except cv2.error:
                 print(img_path)
+    elif SOURCE == ImgsSource.VIDEO:
+        raise Exception("not implemented")
+    else:
+        raise Exception("unknown img source")
 
 
 def predict(img,
