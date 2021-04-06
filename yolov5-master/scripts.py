@@ -116,7 +116,7 @@ def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False, compute_exe_tim
     print(count)
 
 
-def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None):
+def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None, process_all_imgs=False):
     if not CAMERA and (IMG_FOLDER_PATH is None):
         raise Exception
     SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
@@ -129,16 +129,34 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None)
 
     if CAMERA:
         cap = cv2.VideoCapture(0)
+        count = 0
+        store_sign_pred = None
+        store_yolo_pred = None
+        store_yolo_tensor_img = None
         while cap.isOpened():
             _, img = cap.read()
 
-            predictAndPaint(img,
-                            YOLO_MODEL, GPU_DEVICE,
-                            conf_thres, iou_thres,
-                            MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
-                            SIGN_CLASSIFIER)
+            if count == 0:
+                if not process_all_imgs:
+                    count += 1
+                sign_pred, (yolo_pred, yolo_tensor_img) \
+                    = predict(img,
+                              YOLO_MODEL, GPU_DEVICE,
+                              conf_thres, iou_thres,
+                              SIGN_CLASSIFIER)
+                store_sign_pred = sign_pred
+                store_yolo_pred = yolo_pred
+                store_yolo_tensor_img = yolo_tensor_img
+                paint(img,
+                      sign_pred, yolo_pred, yolo_tensor_img,
+                      MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+            else:
+                count = 0
+                paint(img,
+                      store_sign_pred, store_yolo_pred, store_yolo_tensor_img,
+                      MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
 
-            cv2.imshow('img', img)
+            cv2.imshow('camera', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     else:
@@ -148,44 +166,53 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, CAMERA=True, IMG_FOLDER_PATH=None)
             img_path = os.path.join(imgs_folder_path, img_name)
             img = cv2.imread(img_path)
 
-            yolo_painted, sign_painted = predictAndPaint(img,
-                                                         YOLO_MODEL, GPU_DEVICE,
-                                                         conf_thres, iou_thres,
-                                                         MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
-                                                         SIGN_CLASSIFIER)
+            sign_pred, (yolo_pred, yolo_tensor_img) = predict(img,
+                                                              YOLO_MODEL, GPU_DEVICE,
+                                                              conf_thres, iou_thres,
+                                                              SIGN_CLASSIFIER)
+
+            yolo_painted, sign_painted = paint(img,
+                                               sign_pred, yolo_pred, yolo_tensor_img,
+                                               MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
 
             try:
                 if yolo_painted or sign_painted:
-                    cv2.imshow("detect", img)
+                    cv2.imshow("img_file", img)
                     cv2.waitKey(3000)
             except cv2.error:
                 print(img_path)
 
 
-def predictAndPaint(img,
-                    YOLO_MODEL, GPU_DEVICE,
-                    conf_thres, iou_thres,
-                    MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR,
-                    SIGN_CLASSIFIER):
+def predict(img,
+            YOLO_MODEL, GPU_DEVICE,
+            conf_thres, iou_thres,
+            SIGN_CLASSIFIER):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # run yolo
     tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
-    pred = YOLO_MODEL(tensor_img)[0]
-    pred = non_max_suppression(pred, conf_thres, iou_thres)
+    yolo_pred = YOLO_MODEL(tensor_img)[0]
+    yolo_pred = non_max_suppression(yolo_pred, conf_thres, iou_thres)
 
     # run cascade
-    detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
+    sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
 
+    return sign_detect, (yolo_pred, tensor_img)
+
+
+def paint(img,
+          sign_detect,
+          yolo_pred, yolo_tensor_img,
+          MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR):
     sign_painted = False
     # paint cascade
-    if len(detect) > 0:
+    if len(sign_detect) > 0:
         sign_painted = True
-        for (x, y, w, h) in detect:
+        for (x, y, w, h) in sign_detect:
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
     # paint yolo
-    yolo_painted = paint_interested_result(pred, tensor_img, img, MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+    yolo_painted = paint_interested_result(yolo_pred, yolo_tensor_img, img, MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
 
     return yolo_painted, sign_painted
 
