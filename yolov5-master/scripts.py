@@ -127,7 +127,7 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
-async def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
+async def RunModels(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
         raise Exception("path is None")
     SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
@@ -252,6 +252,6 @@ def videoWithoutPredict():
 
 
 if __name__ == "__main__":
-    asyncio.run(RunModel())
+    asyncio.run(RunModels())
 
     print("end")
