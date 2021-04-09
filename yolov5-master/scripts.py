@@ -142,11 +142,10 @@ async def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IM
         cap = cv2.VideoCapture(0)
         while cap.isOpened():
             _, img = cap.read()
-            sign_pred, yolo_pred, yolo_tensor_img \
-                = await predictAsync(img,
-                                     YOLO_MODEL, GPU_DEVICE,
-                                     conf_thres, iou_thres,
-                                     SIGN_CLASSIFIER)
+            sign_pred, (yolo_pred, yolo_tensor_img) = await asyncio.gather(
+                cascadePredictAsync(img, SIGN_CLASSIFIER),
+                yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
+            )
             paint(img,
                   sign_pred, yolo_pred, yolo_tensor_img,
                   MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
@@ -161,10 +160,10 @@ async def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IM
             img_path = os.path.join(imgs_folder_path, img_name)
             img = cv2.imread(img_path)
 
-            sign_pred, (yolo_pred, yolo_tensor_img) = predictAsync(img,
-                                                                   YOLO_MODEL, GPU_DEVICE,
-                                                                   conf_thres, iou_thres,
-                                                                   SIGN_CLASSIFIER)
+            sign_pred, (yolo_pred, yolo_tensor_img) = await asyncio.gather(
+                cascadePredictAsync(img, SIGN_CLASSIFIER),
+                yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
+            )
             yolo_painted, sign_painted = paint(img,
                                                sign_pred, yolo_pred, yolo_tensor_img,
                                                MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
@@ -192,18 +191,6 @@ async def cascadePredictAsync(img, SIGN_CLASSIFIER):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
     return sign_detect
-
-
-async def predictAsync(img,
-                       YOLO_MODEL, GPU_DEVICE,
-                       conf_thres, iou_thres,
-                       SIGN_CLASSIFIER):
-    sign_detect, (yolo_pred, tensor_img) = await asyncio.gather(
-        cascadePredictAsync(img, SIGN_CLASSIFIER),
-        yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
-    )
-
-    return sign_detect, yolo_pred, tensor_img
 
 
 def paint(img,
