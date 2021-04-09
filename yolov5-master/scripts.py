@@ -29,38 +29,6 @@ YOLOV5M_PATH = "./parameters/original/yolov5m.pt"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
 
-def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_img='', img_window=False, webcam=False):
-    # Process detections
-    painted = False
-    for i, det in enumerate(pred):  # detections per image
-        if webcam:  # batch_size >= 1
-            p, s, im0 = path_img[i], '%g: ' % i, origin_img[i].copy()
-        else:
-            p, s, im0 = path_img, '', origin_img
-        p = Path(p)  # to Path
-        s += '%gx%g ' % tensor_img.shape[2:]  # print string
-        if len(det):
-            # Rescale boxes from img_size to im0 size
-            det[:, :4] = scale_coords(tensor_img.shape[2:], det[:, :4], im0.shape).round()
-            # Write results
-            # reversed(det)
-            for (*xyxy, conf, cls) in reversed(det):
-                if int(cls.item()) in {0, 1, 2, 3, 5, 7}:
-                    painted = True
-                    label = f'{names[int(cls)]} {conf:.2f}'
-                    plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
-
-            if img_window:
-                if not webcam:
-                    cv2.imshow(str(p), im0)
-                    k = cv2.waitKey(0) & 0xFF  # standard grammar for 64-bit machine
-                    if k == 27:  # enter ESC to close window
-                        cv2.destroyAllWindows()
-                else:
-                    raise Exception("not implement.")
-    return painted
-
-
 def RunYoloModel(conf_thres=0.25, iou_thres=0.45, compute_exe_time=False):
     cap = cv2.VideoCapture(0)
 
@@ -121,14 +89,45 @@ def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False, compute_exe_tim
     print(count)
 
 
+def paint_interested_result(pred, tensor_img, origin_img, names, colors, path_img='', img_window=False, webcam=False):
+    # Process detections
+    painted = False
+    for i, det in enumerate(pred):  # detections per image
+        if webcam:  # batch_size >= 1
+            p, s, im0 = path_img[i], '%g: ' % i, origin_img[i].copy()
+        else:
+            p, s, im0 = path_img, '', origin_img
+        p = Path(p)  # to Path
+        s += '%gx%g ' % tensor_img.shape[2:]  # print string
+        if len(det):
+            # Rescale boxes from img_size to im0 size
+            det[:, :4] = scale_coords(tensor_img.shape[2:], det[:, :4], im0.shape).round()
+            # Write results
+            # reversed(det)
+            for (*xyxy, conf, cls) in reversed(det):
+                if int(cls.item()) in {0, 1, 2, 3, 5, 7}:
+                    painted = True
+                    label = f'{names[int(cls)]} {conf:.2f}'
+                    plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+
+            if img_window:
+                if not webcam:
+                    cv2.imshow(str(p), im0)
+                    k = cv2.waitKey(0) & 0xFF  # standard grammar for 64-bit machine
+                    if k == 27:  # enter ESC to close window
+                        cv2.destroyAllWindows()
+                else:
+                    raise Exception("not implement.")
+    return painted
+
+
 class ImgsSource(Enum):
     CAMERA = 0
     FILE = 1
     VIDEO = 2
 
 
-async def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None,
-                   process_all_imgs=False):
+async def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
         raise Exception("path is None")
     SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
@@ -225,6 +224,7 @@ def paint(img,
 
 
 def findBroken(image_path: str):
+    # noinspection PyBroadException
     try:
         io_img = io.imread(image_path)
         img = cv2.imread(image_path)
