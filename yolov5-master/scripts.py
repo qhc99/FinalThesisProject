@@ -8,7 +8,11 @@ from utils.plots import plot_one_box
 from utils.general import scale_coords
 from pathlib import Path
 import time
+from skimage import io
 from enum import Enum
+from PIL import Image
+from multiprocessing.dummy import Pool
+import asyncio
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
@@ -123,7 +127,8 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
-def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, process_all_imgs=False):
+async def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None,
+                   process_all_imgs=False):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
         raise Exception("path is None")
     SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
@@ -136,32 +141,16 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLD
 
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0)
-        count = 0
-        store_sign_pred = None
-        store_yolo_pred = None
-        store_yolo_tensor_img = None
         while cap.isOpened():
             _, img = cap.read()
-
-            if count == 0:
-                if not process_all_imgs:
-                    count += 1
-                sign_pred, (yolo_pred, yolo_tensor_img) \
-                    = predict(img,
-                              YOLO_MODEL, GPU_DEVICE,
-                              conf_thres, iou_thres,
-                              SIGN_CLASSIFIER)
-                store_sign_pred = sign_pred
-                store_yolo_pred = yolo_pred
-                store_yolo_tensor_img = yolo_tensor_img
-                paint(img,
-                      sign_pred, yolo_pred, yolo_tensor_img,
-                      MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
-            else:
-                count = 0
-                paint(img,
-                      store_sign_pred, store_yolo_pred, store_yolo_tensor_img,
-                      MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+            sign_pred, yolo_pred, yolo_tensor_img \
+                = await predictAsync(img,
+                                     YOLO_MODEL, GPU_DEVICE,
+                                     conf_thres, iou_thres,
+                                     SIGN_CLASSIFIER)
+            paint(img,
+                  sign_pred, yolo_pred, yolo_tensor_img,
+                  MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
 
             cv2.imshow('camera', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -173,10 +162,10 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLD
             img_path = os.path.join(imgs_folder_path, img_name)
             img = cv2.imread(img_path)
 
-            sign_pred, (yolo_pred, yolo_tensor_img) = predict(img,
-                                                              YOLO_MODEL, GPU_DEVICE,
-                                                              conf_thres, iou_thres,
-                                                              SIGN_CLASSIFIER)
+            sign_pred, (yolo_pred, yolo_tensor_img) = predictAsync(img,
+                                                                   YOLO_MODEL, GPU_DEVICE,
+                                                                   conf_thres, iou_thres,
+                                                                   SIGN_CLASSIFIER)
             yolo_painted, sign_painted = paint(img,
                                                sign_pred, yolo_pred, yolo_tensor_img,
                                                MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
@@ -193,21 +182,29 @@ def RunModel(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, IMG_FOLD
         raise Exception("unknown img source")
 
 
-def predict(img,
-            YOLO_MODEL, GPU_DEVICE,
-            conf_thres, iou_thres,
-            SIGN_CLASSIFIER):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # run yolo
+async def yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres):
     tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
     yolo_pred = YOLO_MODEL(tensor_img)[0]
     yolo_pred = non_max_suppression(yolo_pred, conf_thres, iou_thres)
+    return yolo_pred, tensor_img
 
-    # run cascade
+
+async def cascadePredictAsync(img, SIGN_CLASSIFIER):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
+    return sign_detect
 
-    return sign_detect, (yolo_pred, tensor_img)
+
+async def predictAsync(img,
+                       YOLO_MODEL, GPU_DEVICE,
+                       conf_thres, iou_thres,
+                       SIGN_CLASSIFIER):
+    sign_detect, (yolo_pred, tensor_img) = await asyncio.gather(
+        cascadePredictAsync(img, SIGN_CLASSIFIER),
+        yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
+    )
+
+    return sign_detect, yolo_pred, tensor_img
 
 
 def paint(img,
@@ -227,9 +224,47 @@ def paint(img,
     return yolo_painted, sign_painted
 
 
+def findBroken(image_path: str):
+    try:
+        io_img = io.imread(image_path)
+        img = cv2.imread(image_path)
+        with Image.open(image_path) as p_img:
+            if img is None:
+                print(image_path[image_path.rfind("\\") + 1:])
+            elif io_img is None:
+                print(image_path[image_path.rfind("\\") + 1:])
+            elif p_img is None:
+                print(image_path[image_path.rfind("\\") + 1:])
+    except Exception as e:
+        print(image_path[image_path.rfind("\\") + 1:])
+        return False
+
+
+def process(img_name: str):
+    img_path = os.path.join(NEG_IMGS_FOLDER_PATH, img_name)
+    findBroken(img_path)
+
+
+def printBrokenImages():
+    img_names = os.listdir(NEG_IMGS_FOLDER_PATH)
+
+    pool: Pool = Pool()
+    try:
+        pool.map(process, img_names)
+    except Exception as e:
+        print(e)
+
+
+def videoWithoutPredict():
+    cap = cv2.VideoCapture(0)
+    while cap.isOpened():
+        _, img = cap.read()
+        cv2.imshow('camera', img)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+
 if __name__ == "__main__":
-    # RunYoloModel(compute_exe_time=True)
-    # RunSignModel(NEG_IMGS_FOLDER_PATH, show=True, compute_exe_time=True)
-    RunModel()
+    asyncio.run(RunModel())
 
     print("end")
