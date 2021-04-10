@@ -152,6 +152,7 @@ async def RunModels(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, I
         last_time = time.time()
         while cap.isOpened():
             _, img = cap.read()
+            # trick
             if process_flag:
                 process_flag = False
                 if last_task is not None:
@@ -160,6 +161,7 @@ async def RunModels(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, I
                           MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
                 last_task = asyncio.create_task(
                     predictAsync(img, SIGN_CLASSIFIER, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres))
+
             else:
                 process_flag = True
                 await last_task
@@ -167,6 +169,15 @@ async def RunModels(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, I
                 paint(img,
                       last_sign_pred, last_yolo_pred, last_yolo_tensor_img,
                       MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+
+            # no trick
+            # last_sign_pred, (last_yolo_pred, last_yolo_tensor_img) = await asyncio.gather(
+            #     cascadePredictAsync(img, SIGN_CLASSIFIER),
+            #     yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
+            # )
+            # paint(img,
+            #       last_sign_pred, last_yolo_pred, last_yolo_tensor_img,
+            #       MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
 
             print((time.time() - last_time) * 1000, "ms")
             last_time = time.time()
