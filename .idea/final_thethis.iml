@@ -12,8 +12,11 @@
       <excludeFolder url="file://$MODULE_DIR$/yolov5-master/weights" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (yolo_torch_thesis)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PackageRequirementsSettings">
+    <option name="versionSpecifier" value="Greater or equal (&gt;=x.y.z)" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />

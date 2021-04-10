@@ -140,18 +140,38 @@ async def RunModels(conf_thres=0.25, iou_thres=0.45, SOURCE=ImgsSource.CAMERA, I
 
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0)
+
+        # warm up
+        if cap.isOpened():
+            _, img = cap.read()
+            await predictAsync(img, SIGN_CLASSIFIER, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
+
+        last_task = None
+        process_flag = True
+        last_sign_pred, last_yolo_pred, last_yolo_tensor_img = None, None, None
+        last_time = time.time()
         while cap.isOpened():
             _, img = cap.read()
-            sign_pred, (yolo_pred, yolo_tensor_img) = await asyncio.gather(
-                cascadePredictAsync(img, SIGN_CLASSIFIER),
-                yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
-            )
-            paint(img,
-                  sign_pred, yolo_pred, yolo_tensor_img,
-                  MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+            if process_flag:
+                process_flag = False
+                if last_task is not None:
+                    paint(img,
+                          last_sign_pred, last_yolo_pred, last_yolo_tensor_img,
+                          MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
+                last_task = asyncio.create_task(
+                    predictAsync(img, SIGN_CLASSIFIER, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres))
+            else:
+                process_flag = True
+                await last_task
+                last_sign_pred, (last_yolo_pred, last_yolo_tensor_img) = await last_task.result()
+                paint(img,
+                      last_sign_pred, last_yolo_pred, last_yolo_tensor_img,
+                      MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
 
+            print((time.time() - last_time) * 1000, "ms")
+            last_time = time.time()
             cv2.imshow('camera', img)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(41) & 0xFF == ord('q'):
                 break
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
@@ -193,6 +213,13 @@ async def cascadePredictAsync(img, SIGN_CLASSIFIER):
     return sign_detect
 
 
+async def predictAsync(img, SIGN_CLASSIFIER, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres):
+    return asyncio.gather(
+        cascadePredictAsync(img, SIGN_CLASSIFIER),
+        yoloPredictAsync(img, YOLO_MODEL, GPU_DEVICE, conf_thres, iou_thres)
+    )
+
+
 def paint(img,
           sign_detect,
           yolo_pred, yolo_tensor_img,
@@ -222,7 +249,7 @@ def findBroken(image_path: str):
                 print(image_path[image_path.rfind("\\") + 1:])
             elif p_img is None:
                 print(image_path[image_path.rfind("\\") + 1:])
-    except Exception as e:
+    except Exception:
         print(image_path[image_path.rfind("\\") + 1:])
         return False
 
