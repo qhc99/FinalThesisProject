@@ -24,8 +24,7 @@ CONFI_THRES = 0.25
 IOU_THRES = 0.45
 GPU_DEVICE = select_device('')
 YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
-# 0 1 2 3 5 7
-MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)
+MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)  # 0 1 2 3 5 7
 MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
 cudnn.benchmark = True
 
@@ -39,7 +38,7 @@ class TrafficSystemGUI(QWidget):
         self.initMainWindow()
         self.initImageBox()
         self.initButtons()
-        self.initFPSGroup()
+        self.initFPSText()
         self.threadPool = QThreadPool()
 
     def initMainWindow(self):
@@ -87,27 +86,10 @@ class TrafficSystemGUI(QWidget):
         self.buttonsLayout.addWidget(self.FileButton)
         self.FileButton.setText("文件:off")
 
-    def initFPSGroup(self):
-        self.widget1 = QWidget(self)
-        self.widget1.setGeometry(QRect(440, 500, 250, 24))
-        self.widget1.setObjectName("widget1")
-
-        self.FPS_StatusLayout = QHBoxLayout(self.widget1)
-        self.FPS_StatusLayout.setContentsMargins(0, 0, 0, 0)
-        self.FPS_StatusLayout.setSpacing(30)
-        self.FPS_StatusLayout.setObjectName("horizontalLayout")
-
-        self.FPSSwitch = QRadioButton(self.widget1)
-        self.FPSSwitch.setObjectName("FPSSwitch")
-        self.FPS_StatusLayout.addWidget(self.FPSSwitch)
-        self.FPSSwitch.setText("FPS监测")
-        # noinspection PyUnresolvedReferences
-        self.FPSSwitch.toggled.connect(self.FPS_SwitchPressed)
-        self.FPSSwitchOn = False
-
-        self.FPSTextLabel = QLabel(self.widget1)
+    def initFPSText(self):
+        self.FPSTextLabel = QLabel(self)
         self.FPSTextLabel.setObjectName("FPSTextLabel")
-        self.FPS_StatusLayout.addWidget(self.FPSTextLabel)
+        self.FPSTextLabel.setGeometry(500, 500, 75, 23)
         self.FPSTextLabel.setText("FPS:")
 
     @pyqtSlot()
@@ -123,6 +105,8 @@ class TrafficSystemGUI(QWidget):
         else:
             self.CameraButton.setText(self.CameraButton.text().replace("on", "off"))
             self.cap.release()
+            self.FPSTextLabel.setText("FPS:")
+            self.ImageBox.clear()
 
     @pyqtSlot()
     def cameraRunModels(self):
@@ -158,17 +142,15 @@ class TrafficSystemGUI(QWidget):
 
             paint(img, sign_pred, yolo_pred, yolo_tensor_img)
 
-            if self.FPSSwitch.isChecked():
-                frame_count += 1
-                current_latency = (time.time() - last_time) * 1000
-                last_time = time.time()
-                if frame_count == 1:
-                    latency = current_latency
-                elif frame_count > 1:
-                    latency = ((frame_count - 1) * latency + current_latency) / frame_count
-
-                if latency > 0:
-                    self.FPSTextLabel.setText("FPS:%.1f" % (1000 / latency))
+            frame_count += 1
+            current_latency = (time.time() - last_time) * 1000
+            last_time = time.time()
+            if frame_count == 1:
+                latency = current_latency
+            elif frame_count > 1:
+                latency = ((frame_count - 1) * latency + current_latency) / frame_count
+            if latency > 0:
+                self.FPSTextLabel.setText("FPS:%.1f" % (1000 / latency))
 
             img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
             self.ImageBox.setPixmap(QPixmap.fromImage(img))
