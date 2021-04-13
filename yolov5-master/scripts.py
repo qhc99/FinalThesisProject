@@ -8,12 +8,7 @@ from utils.plots import plot_one_box
 from utils.general import scale_coords
 from pathlib import Path
 import time
-from skimage import io
 from enum import Enum
-from PIL import Image
-from multiprocessing.dummy import Pool
-
-# from multiprocessing import freeze_support
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
@@ -40,6 +35,8 @@ YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
 MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)
 MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
 cudnn.benchmark = True
+
+FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
 def RunYoloModel(compute_exe_time=False):
@@ -131,26 +128,59 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
-def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
+def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
         raise Exception("path is None")
 
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0)
+        sign_pred = None
+        yolo_pred, yolo_tensor_img = None, None
 
-        last_time = time.time()
-        while cap.isOpened():
+        # warm up
+        if cap.isOpened():
             _, img = cap.read()
-            # trick
             sign_pred = signPredict(img)
             yolo_pred, yolo_tensor_img = yoloPredict(img)
+
+        # process trick
+        process_yolo = True
+
+        cv2.namedWindow("camera")
+        cv2.moveWindow('camera', 300, 125)
+
+        # FPS init
+        frame_count = -1
+        last_time = time.time()
+        latency = 0
+
+        while cap.isOpened():
+            _, img = cap.read()
+            if process_yolo:
+                process_yolo = not process_yolo
+                yolo_pred, yolo_tensor_img = yoloPredict(img)
+            else:
+                process_yolo = not process_yolo
+                sign_pred = signPredict(img)
+
             paint(img, sign_pred, yolo_pred, yolo_tensor_img)
 
-            print(time.time() - last_time, "ms")
-            last_time = time.time()
+            if SHOW_FPS:
+                frame_count += 1
+                current_latency = (time.time() - last_time) * 1000
+                last_time = time.time()
+                if frame_count == 1:
+                    latency = current_latency
+                elif frame_count > 1:
+                    latency = ((frame_count - 1) * latency + current_latency) / frame_count
+
+                if latency > 0:
+                    cv2.putText(img, "FPS:%.1f" % (1000 / latency), (0, 20), FONT, 0.5, (255, 80, 80), 1, cv2.LINE_4)
+
             cv2.imshow('camera', img)
-            if cv2.waitKey(41) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
         img_names_list = os.listdir(imgs_folder_path)
@@ -165,8 +195,10 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
             cv2.imshow('camera', img)
             if cv2.waitKey(41) & 0xFF == ord('q'):
                 break
+
     elif SOURCE == ImgsSource.VIDEO:
         raise Exception("not implemented")
+
     else:
         raise Exception("unknown img source")
 
@@ -198,38 +230,6 @@ def paint(img, sign_detect, yolo_pred, yolo_tensor_img):
     return yolo_painted, sign_painted
 
 
-def findBroken(image_path: str):
-    # noinspection PyBroadException
-    try:
-        io_img = io.imread(image_path)
-        img = cv2.imread(image_path)
-        with Image.open(image_path) as p_img:
-            if img is None:
-                print(image_path[image_path.rfind("\\") + 1:])
-            elif io_img is None:
-                print(image_path[image_path.rfind("\\") + 1:])
-            elif p_img is None:
-                print(image_path[image_path.rfind("\\") + 1:])
-    except Exception:
-        print(image_path[image_path.rfind("\\") + 1:])
-        return False
-
-
-def process(img_name: str):
-    img_path = os.path.join(NEG_IMGS_FOLDER_PATH, img_name)
-    findBroken(img_path)
-
-
-def printBrokenImages():
-    img_names = os.listdir(NEG_IMGS_FOLDER_PATH)
-
-    pool: Pool = Pool()
-    try:
-        pool.map(process, img_names)
-    except Exception as e:
-        print(e)
-
-
 def videoWithoutPredict():
     cap = cv2.VideoCapture(0)
     while cap.isOpened():
@@ -240,8 +240,6 @@ def videoWithoutPredict():
 
 
 if __name__ == "__main__":
-    # freeze_support()
-    # multiprocessing.set_start_method("spawn")
-    RunModels()
+    RunModels(SHOW_FPS=True)
 
     print("end")
