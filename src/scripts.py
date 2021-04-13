@@ -39,57 +39,6 @@ cudnn.benchmark = True
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
-def RunYoloModel(compute_exe_time=False):
-    cap = cv2.VideoCapture(0)
-    while cap.isOpened():
-        _, img = cap.read()
-        tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
-        if compute_exe_time:
-            t1 = time.time()
-        pred = YOLO_MODEL(tensor_img)[0]
-        pred = non_max_suppression(pred, CONFI_THRES, IOU_THRES)
-        if compute_exe_time:
-            t2 = time.time()
-            # noinspection PyUnboundLocalVariable
-            print((t2 - t1) * 1000, "ms")
-        paint_interested_result(pred, tensor_img, img, MODEL_OUTPUT_NAMES, MODEL_OUTPUT_COLOR)
-        cv2.imshow('img', img)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-
-
-def RunSignModel(IMGS_DIR_PATH=POS_IMGS_FOLDER_PATH, show=False, compute_exe_time=False):
-    imgs_folder_path = os.path.join(os.getcwd(), IMGS_DIR_PATH)
-    img_names_list = os.listdir(imgs_folder_path)
-    count = 0
-    for img_name in img_names_list:
-        img_path = imgs_folder_path + "\\" + img_name
-        img = cv2.imread(img_path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        if compute_exe_time:
-            t1 = time.time()
-        detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
-        if compute_exe_time:
-            t2 = time.time()
-            # noinspection PyUnboundLocalVariable
-            print((t2 - t1) * 1000, "ms")
-
-        if len(detect) > 0:
-            for (x, y, w, h) in detect:
-                cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            print(img_name)
-            count += 1
-            if show:
-                try:
-                    cv2.imshow("detect", img)
-                    cv2.waitKey(4000)
-                except cv2.error:
-                    print(img_path)
-    print(count)
-
-
 def paint_interested_result(pred, tensor_img, origin_img, path_img='', img_window=False, webcam=False):
     # Process detections
     painted = False
