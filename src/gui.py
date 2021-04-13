@@ -55,8 +55,7 @@ class TrafficSystemGUI(QWidget):
         self.setWindowIcon(QIcon("resources/hohai.png"))
 
     def initImageBox(self):
-        self.scene = QGraphicsScene()
-        self.ImageBox = QGraphicsView(self.scene)
+        self.ImageBox = QLabel(self)
         self.ImageBox.setGeometry(QRect(10, 10, 640, 480))
         self.ImageBox.setObjectName("ImageBox")
 
@@ -140,16 +139,16 @@ class TrafficSystemGUI(QWidget):
         # process trick
         process_yolo = True
 
-        # cv2.namedWindow("camera")
-        # cv2.moveWindow('camera', 300, 115)
-
         # FPS init
         frame_count = -1
         last_time = time.time()
         latency = 0
 
         while self.cap.isOpened():
-            _, img = self.cap.read()
+            read_succ, img = self.cap.read()
+            if not read_succ:
+                break
+
             if process_yolo:
                 process_yolo = not process_yolo
                 yolo_pred, yolo_tensor_img = yoloPredict(img)
@@ -169,16 +168,10 @@ class TrafficSystemGUI(QWidget):
                     latency = ((frame_count - 1) * latency + current_latency) / frame_count
 
                 if latency > 0:
-                    # cv2.putText(img, "FPS:%.1f" % (1000 / latency), (0, 20), FONT, 0.5, (255, 80, 80), 1, cv2.LINE_4)
                     self.FPSTextLabel.setText("FPS:%.1f" % (1000 / latency))
 
             img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
-            self.scene.clear()
-            self.scene.addPixmap(QPixmap.fromImage(img))
-            self.scene.update()
-            # cv2.imshow('camera', img)
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #     break
+            self.ImageBox.setPixmap(QPixmap.fromImage(img))
 
 
 if __name__ == '__main__':

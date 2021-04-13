@@ -88,7 +88,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
 
         # warm up
         if cap.isOpened():
-            _, img = cap.read()
+            read_succ, img = cap.read()
             sign_pred = signPredict(img)
             yolo_pred, yolo_tensor_img = yoloPredict(img)
 
@@ -104,7 +104,10 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
         latency = 0
 
         while cap.isOpened():
-            _, img = cap.read()
+            read_succ, img = cap.read()
+            if not read_succ:
+                break
+
             if process_yolo:
                 process_yolo = not process_yolo
                 yolo_pred, yolo_tensor_img = yoloPredict(img)
