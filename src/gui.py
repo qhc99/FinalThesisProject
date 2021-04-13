@@ -8,10 +8,7 @@ import cv2
 import torch.backends.cudnn as cudnn
 from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors
-import os
-from pathlib import Path
 import time
-import asyncio
 
 MODEL_NUM = 3
 # 1: 639
