@@ -11,8 +11,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/yolov5-master/weights" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
-      <excludeFolder url="file://$MODULE_DIR$/yolov5-master/save" />
       <excludeFolder url="file://$MODULE_DIR$/yolov5-master/resources" />
+      <excludeFolder url="file://$MODULE_DIR$/yolov5-master/outdataed" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.8 (yolo_torch_thesis)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
