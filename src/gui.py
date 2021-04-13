@@ -100,6 +100,7 @@ class TrafficSystemGUI(QWidget):
     @pyqtSlot()
     def clickCameraButton(self):
         if self.CameraButton.text().endswith("off"):
+            self.VideoButtion.setEnabled(False)
             self.CameraButton.setText(self.CameraButton.text().replace("off", "on"))
             self.threadPool.start(self.cameraRunModels)
         else:
@@ -107,6 +108,7 @@ class TrafficSystemGUI(QWidget):
             self.cap.release()
             self.FPSTextLabel.setText("FPS:")
             self.ImageBox.clear()
+            self.VideoButtion.setEnabled(True)
 
     @pyqtSlot()
     def cameraRunModels(self):
@@ -124,10 +126,8 @@ class TrafficSystemGUI(QWidget):
         process_yolo = True
 
         # FPS init
-        frame_count = -1
         last_time = time.time()
-        latency = 0
-
+        yolo_latency, sign_latency = 0, 0
         while self.cap.isOpened():
             read_succ, img = self.cap.read()
             if not read_succ:
@@ -142,15 +142,13 @@ class TrafficSystemGUI(QWidget):
 
             paint(img, sign_pred, yolo_pred, yolo_tensor_img)
 
-            frame_count += 1
-            current_latency = (time.time() - last_time) * 1000
+            current_latency = (time.time() - last_time)
             last_time = time.time()
-            if frame_count == 1:
-                latency = current_latency
-            elif frame_count > 1:
-                latency = ((frame_count - 1) * latency + current_latency) / frame_count
-            if latency > 0:
-                self.FPSTextLabel.setText("FPS:%.1f" % (1000 / latency))
+            if process_yolo:
+                yolo_latency = current_latency
+            else:
+                sign_latency = current_latency
+                self.FPSTextLabel.setText("FPS:%.1f" % (2.0 / (yolo_latency + sign_latency)))
 
             img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
             self.ImageBox.setPixmap(QPixmap.fromImage(img))
