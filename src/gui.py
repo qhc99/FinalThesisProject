@@ -10,9 +10,9 @@ from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors
 import time
 
-MODEL_NUM = 3
 # 1: 639
 # 3: 381
+MODEL_NUM = 3
 CASCADE_FILE_PATH = "../../dataset/TrafficBlockSign/models/model" + str(MODEL_NUM) + "/cascade.xml"
 SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
 
@@ -25,11 +25,10 @@ MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)  # 0 1 2 3 5 7
 MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
 cudnn.benchmark = True
 
-FONT = cv2.FONT_HERSHEY_SIMPLEX
-
 
 class TrafficSystemGUI(QWidget):
 
+    # noinspection PyArgumentList
     def __init__(self):
         super().__init__()
         self.initMainWindow()
@@ -55,6 +54,7 @@ class TrafficSystemGUI(QWidget):
         self.ImageBox.setGeometry(QRect(10, 10, 640, 480))
         self.ImageBox.setObjectName("ImageBox")
 
+    # noinspection PyArgumentList
     def initButtons(self):
         self.widget = QWidget(self)
         self.widget.setGeometry(QRect(660, 250, 95, 126))
@@ -107,6 +107,7 @@ class TrafficSystemGUI(QWidget):
             self.ImageBox.clear()
             self.VideoButtion.setEnabled(True)
 
+    # noinspection PyArgumentList
     @pyqtSlot()
     def cameraRunModels(self):
         self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
