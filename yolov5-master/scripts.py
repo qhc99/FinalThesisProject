@@ -133,7 +133,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
         raise Exception("path is None")
 
     if SOURCE == ImgsSource.CAMERA:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(0+cv2.CAP_DSHOW)
         sign_pred = None
         yolo_pred, yolo_tensor_img = None, None
 
@@ -147,7 +147,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
         process_yolo = True
 
         cv2.namedWindow("camera")
-        cv2.moveWindow('camera', 300, 125)
+        cv2.moveWindow('camera', 300, 115)
 
         # FPS init
         frame_count = -1
