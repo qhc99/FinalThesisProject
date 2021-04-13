@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import pyqtSlot
 
 
@@ -11,7 +11,6 @@ class App(QWidget):
         self.initWindow()
         self.initLabel()
         self.initButton()
-        self.show()
 
     def initWindow(self):
         self.__height = 480
@@ -21,6 +20,7 @@ class App(QWidget):
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
+        self.setWindowIcon(QIcon(""))
 
     def initButton(self):
         # attach button
@@ -47,4 +47,5 @@ class App(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
+    ex.show()
     sys.exit(app.exec_())
