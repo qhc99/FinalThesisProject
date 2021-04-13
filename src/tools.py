@@ -47,4 +47,5 @@ def transform(img_path:  str, output_path:  str):
 
 
 if __name__ == "__main__":
-    transform("resources/hohai.jpg", "resources/hohai.svg")
+    # transform("resources/hohai.jpg", "resources/hohai.svg")
+    print("end")

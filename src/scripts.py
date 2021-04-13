@@ -189,9 +189,3 @@ def videoWithoutPredict():
         cv2.imshow('camera', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
-
-if __name__ == "__main__":
-    RunModels(SHOW_FPS=True)
-
-    print("end")

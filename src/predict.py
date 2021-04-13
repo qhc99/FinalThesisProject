@@ -1,4 +1,3 @@
-import argparse
 from pathlib import Path
 import cv2
 import torch
@@ -98,12 +97,12 @@ def paint_result(pred, tensor_img, origin_img, names, colors, path_img='', img_w
     return origin_img
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default='parameters/original/yolov5s.pt', help='model.pt '
-                                                                                                         'path(s)')
-    parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
-    opt = parser.parse_args()
-    print(opt)
-    with torch.no_grad():
-        pipeline(opt.source, opt.weights, img_window=True)
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--weights', nargs='+', type=str, default='parameters/original/yolov5s.pt', help='model.pt '
+#                                                                                                          'path(s)')
+#     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
+#     opt = parser.parse_args()
+#     print(opt)
+#     with torch.no_grad():
+#         pipeline(opt.source, opt.weights, img_window=True)
