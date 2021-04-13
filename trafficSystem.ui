@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>814</width>
-    <height>620</height>
+    <width>767</width>
+    <height>579</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -30,70 +30,70 @@
      </rect>
     </property>
    </widget>
-   <widget class="QLabel" name="FPSTextLabel">
-    <property name="geometry">
-     <rect>
-      <x>580</x>
-      <y>510</y>
-      <width>36</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>FPS:</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="FPSSwitch">
-    <property name="geometry">
-     <rect>
-      <x>550</x>
-      <y>530</y>
-      <width>90</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>FPS监测</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="CameraButton">
+   <widget class="QWidget" name="">
     <property name="geometry">
      <rect>
       <x>660</x>
       <y>250</y>
-      <width>99</width>
-      <height>28</height>
+      <width>95</width>
+      <height>126</height>
      </rect>
     </property>
-    <property name="text">
-     <string>摄像头</string>
-    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>20</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="CameraButton">
+       <property name="text">
+        <string>摄像头</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="VideoButtion">
+       <property name="text">
+        <string>视频</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="FileButton">
+       <property name="text">
+        <string>文件</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
-   <widget class="QPushButton" name="VideoButtion">
+   <widget class="QWidget" name="">
     <property name="geometry">
      <rect>
-      <x>660</x>
-      <y>300</y>
-      <width>99</width>
-      <height>28</height>
+      <x>440</x>
+      <y>500</y>
+      <width>158</width>
+      <height>24</height>
      </rect>
     </property>
-    <property name="text">
-     <string>视频</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="FileButton">
-    <property name="geometry">
-     <rect>
-      <x>660</x>
-      <y>350</y>
-      <width>99</width>
-      <height>28</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>文件</string>
-    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>30</number>
+     </property>
+     <item>
+      <widget class="QRadioButton" name="FPSSwitch">
+       <property name="text">
+        <string>FPS监测</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="FPSTextLabel">
+       <property name="text">
+        <string>FPS:</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -102,7 +102,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>814</width>
+     <width>767</width>
      <height>26</height>
     </rect>
    </property>

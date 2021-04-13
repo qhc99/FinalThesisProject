@@ -4,7 +4,7 @@ from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtCore import pyqtSlot
 
 
-class App(QWidget):
+class TrafficSystemGUI(QWidget):
 
     def __init__(self):
         super().__init__()
@@ -13,14 +13,16 @@ class App(QWidget):
         self.initButton()
 
     def initWindow(self):
-        self.__height = 480
-        self.__width = 640
+        self.__height = 579
+        self.__width = 765
         self.__top = 120
         self.__left = 300
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
-        self.setWindowIcon(QIcon(""))
+        self.setFixedWidth(self.__width)
+        self.setFixedHeight(self.__height)
+        self.setWindowIcon(QIcon("resources/hohai.png"))
 
     def initButton(self):
         # attach button
@@ -46,6 +48,6 @@ class App(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = App()
+    ex = TrafficSystemGUI()
     ex.show()
     sys.exit(app.exec_())
