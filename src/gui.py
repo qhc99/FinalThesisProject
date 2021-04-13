@@ -8,7 +8,6 @@ import cv2
 import torch.backends.cudnn as cudnn
 from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors
-import time
 
 # 1: 639
 # 3: 381
@@ -32,16 +31,15 @@ class TrafficSystemGUI(QWidget):
     def __init__(self):
         super().__init__()
         self.initMainWindow()
-        self.initImageBox()
+        self.initImageGroup()
         self.initButtons()
-        self.initFPSText()
         self.threadPool = QThreadPool()
 
     def initMainWindow(self):
-        self.__height = 579
-        self.__width = 765
-        self.__top = 300
-        self.__left = 610
+        self.__height = 719
+        self.__width = 1097
+        self.__top = 180
+        self.__left = 400
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
@@ -49,50 +47,33 @@ class TrafficSystemGUI(QWidget):
         self.setFixedHeight(self.__height)
         self.setWindowIcon(QIcon("resources/hohai.png"))
 
-    def initImageBox(self):
-        self.ImageBox = QLabel(self)
-        self.ImageBox.setGeometry(QRect(10, 10, 640, 480))
-        self.ImageBox.setObjectName("ImageBox")
+    def initImageGroup(self):
+        self.ImageBox = QGraphicsView(self)
+        self.ImageBox.setGeometry(QRect(10, 10, 941, 671))
 
-    # noinspection PyArgumentList
+        self.ImageScreen = QLabel(self)
+        rect = QRect(10, 10, 200, 200)
+        self.ImageScreen.setGeometry(rect)
+        self.ImageScreen.setText("")
+
+        self.ImageScreen.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding))
+        self.ImageScreenTop = rect.top()
+        self.ImageScreenLeft = rect.left()
+        self.ImageScreenWidth = rect.width()
+        self.ImageScreenHeight = rect.height()
+
+    # noinspection PyArgumentList,PyUnresolvedReferences
     def initButtons(self):
-        self.widget = QWidget(self)
-        self.widget.setGeometry(QRect(660, 250, 95, 126))
-        self.widget.setObjectName("widget")
-
-        self.buttonsLayout = QVBoxLayout(self.widget)
-        self.buttonsLayout.setContentsMargins(0, 0, 0, 0)
-        self.buttonsLayout.setSpacing(20)
-        self.buttonsLayout.setObjectName("verticalLayout")
-
-        self.CameraButton = QPushButton(self.widget)
-        self.CameraButton.setObjectName("CameraButton")
-        self.buttonsLayout.addWidget(self.CameraButton)
-        self.CameraButton.setText("摄像头:off")
-        # noinspection PyUnresolvedReferences
-        self.CameraButton.clicked.connect(self.clickCameraButton)
-        self.cap = None
-
-        self.VideoButtion = QPushButton(self.widget)
-        self.VideoButtion.setObjectName("VideoButtion")
-        self.buttonsLayout.addWidget(self.VideoButtion)
+        self.VideoButtion = QPushButton(self)
+        self.VideoButtion.setGeometry(QRect(970, 510, 111, 51))
         self.VideoButtion.setText("视频:off")
 
-        self.FileButton = QPushButton(self.widget)
-        self.FileButton.setObjectName("FileButton")
-        self.buttonsLayout.addWidget(self.FileButton)
-        self.FileButton.setText("文件:off")
+        self.CameraButton = QPushButton(self)
+        self.CameraButton.setGeometry(QRect(970, 630, 111, 51))
+        self.CameraButton.setText("摄像头:off")
+        self.CameraButton.clicked.connect(self.clickCameraButton)
 
-    def initFPSText(self):
-        self.FPSTextLabel = QLabel(self)
-        self.FPSTextLabel.setObjectName("FPSTextLabel")
-        self.FPSTextLabel.setGeometry(500, 500, 75, 23)
-        self.FPSTextLabel.setText("FPS:")
-
-    @pyqtSlot()
-    def FPS_SwitchPressed(self):
-        if not self.FPSSwitch.isChecked():
-            self.FPSTextLabel.setText("FPS:")
+        self.cap = None
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -103,8 +84,7 @@ class TrafficSystemGUI(QWidget):
         else:
             self.CameraButton.setText(self.CameraButton.text().replace("on", "off"))
             self.cap.release()
-            self.FPSTextLabel.setText("FPS:")
-            self.ImageBox.clear()
+            self.ImageScreen.clear()
             self.VideoButtion.setEnabled(True)
 
     # noinspection PyArgumentList
@@ -123,9 +103,6 @@ class TrafficSystemGUI(QWidget):
         # process trick
         process_yolo = True
 
-        # FPS init
-        last_time = time.time()
-        yolo_latency, sign_latency = 0, 0
         while self.cap.isOpened():
             read_succ, img = self.cap.read()
             if not read_succ:
@@ -139,17 +116,14 @@ class TrafficSystemGUI(QWidget):
                 sign_pred = signPredict(img)
 
             paint(img, sign_pred, yolo_pred, yolo_tensor_img)
-
-            current_latency = (time.time() - last_time)
-            last_time = time.time()
-            if process_yolo:
-                yolo_latency = current_latency
-            else:
-                sign_latency = current_latency
-                self.FPSTextLabel.setText("FPS:%.1f" % (2.0 / (yolo_latency + sign_latency)))
-
             img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
-            self.ImageBox.setPixmap(QPixmap.fromImage(img))
+
+            if not(img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
+                self.ImageScreen.resize(img.width(), img.height())
+                self.ImageScreenWidth = img.width()
+                self.ImageScreenHeight = img.height()
+
+            self.ImageScreen.setPixmap(QPixmap.fromImage(img))
 
 
 if __name__ == '__main__':
