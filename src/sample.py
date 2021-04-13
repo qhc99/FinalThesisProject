@@ -22,6 +22,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(_mainWindow.sizePolicy().hasHeightForWidth())
         _mainWindow.setSizePolicy(sizePolicy)
 
+        # this
         self.centralwidget = QtWidgets.QWidget(_mainWindow)
         self.centralwidget.setObjectName("centralwidget")
 

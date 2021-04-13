@@ -1,22 +1,23 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel
-from PyQt5.QtGui import QFont, QIcon
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 
 class TrafficSystemGUI(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.initWindow()
-        self.initLabel()
-        self.initButton()
+        self.initMainWindow()
+        self.initImageBox()
+        self.initButtons()
+        self.initFPSGroup()
 
-    def initWindow(self):
+    def initMainWindow(self):
         self.__height = 579
         self.__width = 765
-        self.__top = 120
-        self.__left = 300
+        self.__top = 300
+        self.__left = 610
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
@@ -24,30 +25,59 @@ class TrafficSystemGUI(QWidget):
         self.setFixedHeight(self.__height)
         self.setWindowIcon(QIcon("resources/hohai.png"))
 
-    def initButton(self):
-        # attach button
-        self.__button = QPushButton('PyQt5 button', self)
-        self.__button.setToolTip('This is an example button')
-        self.__button.move(100, 70)
-        self.__button.clicked.connect(self.on_click)
+    def initImageBox(self):
+        self.ImageBox = QGraphicsView(self)
+        self.ImageBox.setGeometry(QRect(10, 10, 640, 480))
+        self.ImageBox.setObjectName("ImageBox")
+        
+    def initButtons(self):
+        self.widget = QWidget(self)
+        self.widget.setGeometry(QRect(660, 250, 95, 126))
+        self.widget.setObjectName("widget")
 
-    @pyqtSlot()
-    def on_click(self):
-        print('PyQt5 button click')
+        self.buttonsLayout = QVBoxLayout(self.widget)
+        self.buttonsLayout.setContentsMargins(0, 0, 0, 0)
+        self.buttonsLayout.setSpacing(20)
+        self.buttonsLayout.setObjectName("verticalLayout")
 
-    def initLabel(self):
-        # attach button
-        self.__label = QLabel(self)
-        self.__label.setText("Hello World")
-        font = QFont()
-        font.setFamily("Arial")
-        font.setPointSize(16)
-        self.__label.setFont(font)
-        self.__label.move(50, 20)
+        self.CameraButton = QPushButton(self.widget)
+        self.CameraButton.setObjectName("CameraButton")
+        self.buttonsLayout.addWidget(self.CameraButton)
+        self.CameraButton.setText("摄像头")
+
+        self.VideoButtion = QPushButton(self.widget)
+        self.VideoButtion.setObjectName("VideoButtion")
+        self.buttonsLayout.addWidget(self.VideoButtion)
+        self.VideoButtion.setText("视频")
+
+        self.FileButton = QPushButton(self.widget)
+        self.FileButton.setObjectName("FileButton")
+        self.buttonsLayout.addWidget(self.FileButton)
+        self.FileButton.setText("文件")
+        
+    def initFPSGroup(self):
+        self.widget1 = QWidget(self)
+        self.widget1.setGeometry(QRect(440, 500, 158, 24))
+        self.widget1.setObjectName("widget1")
+
+        self.FPS_StatusLayout = QHBoxLayout(self.widget1)
+        self.FPS_StatusLayout.setContentsMargins(0, 0, 0, 0)
+        self.FPS_StatusLayout.setSpacing(30)
+        self.FPS_StatusLayout.setObjectName("horizontalLayout")
+
+        self.FPSSwitch = QRadioButton(self.widget1)
+        self.FPSSwitch.setObjectName("FPSSwitch")
+        self.FPS_StatusLayout.addWidget(self.FPSSwitch)
+        self.FPSSwitch.setText("FPS监测")
+
+        self.FPSTextLabel = QLabel(self.widget1)
+        self.FPSTextLabel.setObjectName("FPSTextLabel")
+        self.FPS_StatusLayout.addWidget(self.FPSTextLabel)
+        self.FPSTextLabel.setText("FPS:")
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = TrafficSystemGUI()
-    ex.show()
+    ui = TrafficSystemGUI()
+    ui.show()
     sys.exit(app.exec_())
