@@ -144,7 +144,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
             paint(img, sign_pred, yolo_pred, yolo_tensor_img)
 
             cv2.imshow('camera', img)
-            if cv2.waitKey(41) & 0xFF == ord('q'):
+            if cv2.waitKey(3000) & 0xFF == ord('q'):
                 break
 
     elif SOURCE == ImgsSource.VIDEO:
@@ -188,3 +188,7 @@ def videoWithoutPredict():
         cv2.imshow('camera', img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+
+if __name__ == "__main__":
+    RunModels()
