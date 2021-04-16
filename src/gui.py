@@ -140,6 +140,8 @@ class TrafficSystemGUI(QWidget):
 
             if self.VideoButtion.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
+        yolo_process.join()
+        sign_process.join()
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -200,6 +202,8 @@ class TrafficSystemGUI(QWidget):
 
             if self.CameraButton.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
+        yolo_process.join()
+        sign_process.join()
 
 
 if __name__ == '__main__':

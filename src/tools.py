@@ -4,6 +4,7 @@ import cv2
 import os
 from multiprocessing import Pool
 from matplotlib import image as mt_image
+from shutil import copyfile
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 
@@ -46,6 +47,16 @@ def transform(img_path:  str, output_path:  str):
     mt_image.imsave(fname=output_path, format="svg", arr=ret_img)
 
 
+def copy(name):
+    src_dir = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
+    dst_dir = "../../yolo_sign_dataset/images/train"
+    copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
+
+
 if __name__ == "__main__":
     # transform("resources/hohai.jpg", "resources/hohai.svg")
-    print("end")
+    # print("end")
+    # file_names = os.listdir("../../dataset/TrafficBlockSign/neg_imgs/imgs")
+    # pool = Pool()
+    # pool.map(copy, file_names)
+    print("success")
