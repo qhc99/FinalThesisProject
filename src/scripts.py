@@ -1,14 +1,18 @@
 import cv2
+import time
+import os
+import numpy as np
+from pathlib import Path
+from enum import Enum
+from PIL import Image
 import torch.backends.cudnn as cudnn
+from multiprocessing import Process, Queue
+
 from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors, img_resize, img_transform
 from utils.general import non_max_suppression
-import os
 from utils.plots import plot_one_box
 from utils.general import scale_coords
-from pathlib import Path
-import time
-from enum import Enum
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
@@ -81,52 +85,46 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
         raise Exception("path is None")
 
     if SOURCE == ImgsSource.CAMERA:
-        cap = cv2.VideoCapture(0+cv2.CAP_DSHOW)
-        sign_pred = None
-        yolo_pred, yolo_tensor_img = None, None
-
-        # warm up
-        if cap.isOpened():
-            read_succ, img = cap.read()
-            sign_pred = signPredict(img)
-            yolo_pred, yolo_tensor_img = yoloPredict(img)
-
-        # process trick
-        process_yolo = True
+        cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
 
         cv2.namedWindow("camera")
         cv2.moveWindow('camera', 300, 115)
 
         # FPS init
-        frame_count = -1
         last_time = time.time()
-        latency = 0
+
+        yolo_in_queue = Queue()
+        yolo_out_queue = Queue()
+        yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
+        yolo_process.start()
+
+        sign_in_queue = Queue()
+        sign_out_queue = Queue()
+        sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
+        sign_process.start()
 
         while cap.isOpened():
             read_succ, img = cap.read()
             if not read_succ:
                 break
+            pil_img = cv2_to_pil(img)
 
-            if process_yolo:
-                process_yolo = not process_yolo
-                yolo_pred, yolo_tensor_img = yoloPredict(img)
-            else:
-                process_yolo = not process_yolo
-                sign_pred = signPredict(img)
+            yolo_in_queue.put(pil_img, True)
+            sign_in_queue.put(pil_img, True)
 
-            paint(img, sign_pred, yolo_pred, yolo_tensor_img)
+            img = yolo_out_queue.get(True)
+            img = pil_to_cv2(img)
+            sign_pred = sign_out_queue.get(True)
+
+            if len(sign_pred) > 0:
+                for (x, y, w, h) in sign_pred:
+                    cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
             if SHOW_FPS:
-                frame_count += 1
                 current_latency = (time.time() - last_time) * 1000
                 last_time = time.time()
-                if frame_count == 1:
-                    latency = current_latency
-                elif frame_count > 1:
-                    latency = ((frame_count - 1) * latency + current_latency) / frame_count
-
-                if latency > 0:
-                    cv2.putText(img, "FPS:%.1f" % (1000 / latency), (0, 20), FONT, 0.5, (255, 80, 80), 1, cv2.LINE_4)
+                cv2.putText(img, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
+                            cv2.LINE_4)
 
             cv2.imshow('camera', img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -139,9 +137,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
             img_path = os.path.join(imgs_folder_path, img_name)
             img = cv2.imread(img_path)
 
-            sign_pred = signPredict(img)
-            yolo_pred, yolo_tensor_img = yoloPredict(img)
-            paint(img, sign_pred, yolo_pred, yolo_tensor_img)
+            # sign_pred = signPredict(img)
+            # yolo_pred, yolo_tensor_img = yoloPredict(img)
+            # paint(img, sign_pred, yolo_pred, yolo_tensor_img)
 
             cv2.imshow('camera', img)
             if cv2.waitKey(3000) & 0xFF == ord('q'):
@@ -154,17 +152,26 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
         raise Exception("unknown img source")
 
 
-def yoloPredict(img):
-    tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
-    yolo_pred = YOLO_MODEL(tensor_img)[0]
-    yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
-    return yolo_pred, tensor_img
+def yoloPredict(in_queue: Queue, out_queue: Queue):
+    while True:
+        img = in_queue.get(True)
+        img = pil_to_cv2(img)
+        tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
+        yolo_pred = YOLO_MODEL(tensor_img)[0]
+        yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
+        # return yolo_pred, tensor_img
+        yolo_paint_interested_result(yolo_pred, tensor_img, img)
+        img = cv2_to_pil(img)
+        out_queue.put(img, True)
 
 
-def signPredict(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
-    return sign_detect
+def signPredict(in_queue: Queue, out_queue: Queue):
+    while True:
+        img = in_queue.get(True)
+        img = pil_to_cv2(img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
+        out_queue.put(sign_detect, True)
 
 
 def paint(img, sign_detect, yolo_pred, yolo_tensor_img):
@@ -190,5 +197,13 @@ def videoWithoutPredict():
             break
 
 
+def cv2_to_pil(img):  # Since you want to be able to use Pillow (PIL)
+    return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+
+def pil_to_cv2(img):
+    return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+
+
 if __name__ == "__main__":
-    RunModels()
+    RunModels(SHOW_FPS=True)
