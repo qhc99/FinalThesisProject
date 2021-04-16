@@ -68,7 +68,7 @@ def yoloPredictionPaint(pred, tensor_img, origin_img, path_img='', img_window=Fa
                 if int(cls.item()) in INTRESTED_CLASSES:
                     painted = True
                     label = f'{MODEL_OUTPUT_NAMES[int(cls)]} {conf:.2f}'
-                    plot_one_box(xyxy, im0, label=label, color=MODEL_OUTPUT_COLOR[int(cls)], line_thickness=3)
+                    plot_one_box(xyxy, im0, label=label, color=MODEL_OUTPUT_COLOR[int(cls)], line_thickness=2)
 
             if img_window:
                 if not webcam:
@@ -83,10 +83,10 @@ def yoloPredictionPaint(pred, tensor_img, origin_img, path_img='', img_window=Fa
 
 def signPredictionPaint(img, sign_pred):
     if len(sign_pred) > 0:
-        label = "BlockSign"
+        label = "prohibit"
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
-            plot_one_box(xyxy, img, label=label, color=[51, 51, 204], line_thickness=3)
+            plot_one_box(xyxy, img, label=label, color=[51, 51, 204], line_thickness=2)
 
 
 class ImgsSource(Enum):
@@ -95,7 +95,7 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
-def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
+def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
         raise Exception("path is None")
 
@@ -132,11 +132,10 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
             signPredictionPaint(yolo_painted, sign_pred)
             res_img = yolo_painted
 
-            if SHOW_FPS:
-                current_latency = (time.time() - last_time) * 1000
-                last_time = time.time()
-                cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
-                            cv2.LINE_4)
+            current_latency = (time.time() - last_time) * 1000
+            last_time = time.time()
+            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
+                        cv2.LINE_4)
 
             cv2.imshow('camera', res_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -203,4 +202,5 @@ def pil_to_cv2(img):
 
 
 if __name__ == "__main__":
-    RunModels(SHOW_FPS=True)
+    RunModels(SOURCE=ImgsSource.FILE, IMG_FOLDER_PATH="../../dataset/TrafficBlockSign/pos_imgs/img")
+    # RunModels()
