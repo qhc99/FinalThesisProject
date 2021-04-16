@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1669</width>
+    <width>1894</width>
     <height>963</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>1471</width>
+      <width>1521</width>
       <height>941</height>
      </rect>
     </property>
@@ -79,15 +79,16 @@
    <widget class="QPushButton" name="VideoButtion">
     <property name="geometry">
      <rect>
-      <x>1500</x>
-      <y>710</y>
-      <width>151</width>
-      <height>71</height>
+      <x>1580</x>
+      <y>630</y>
+      <width>241</width>
+      <height>101</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <pointsize>15</pointsize>
+      <family>楷体</family>
+      <pointsize>24</pointsize>
      </font>
     </property>
     <property name="text">
@@ -97,19 +98,39 @@
    <widget class="QPushButton" name="CameraButton">
     <property name="geometry">
      <rect>
-      <x>1500</x>
-      <y>880</y>
-      <width>151</width>
-      <height>71</height>
+      <x>1580</x>
+      <y>850</y>
+      <width>241</width>
+      <height>101</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <pointsize>15</pointsize>
+      <family>楷体</family>
+      <pointsize>24</pointsize>
      </font>
     </property>
     <property name="text">
      <string>摄像头:off</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>1540</x>
+      <y>270</y>
+      <width>351</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>14</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;绿色:行人&lt;/p&gt;&lt;p&gt;红色:汽车(轿车、卡车、摩托车)&lt;/p&gt;&lt;p&gt;蓝色:禁止标志&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
    </widget>
   </widget>

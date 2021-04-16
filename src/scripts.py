@@ -196,7 +196,7 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         out_queue.put(sign_detect, True)
 
 
-def cv2_to_pil(img):  # Since you want to be able to use Pillow (PIL)
+def cv2_to_pil(img):
     return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
 

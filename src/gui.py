@@ -24,9 +24,9 @@ class TrafficSystemGUI(QWidget):
 
     def initMainWindow(self):
         self.__height = 963
-        self.__width = 1669
-        self.__top = 50
-        self.__left = 100
+        self.__width = 1894
+        self.__top = 45
+        self.__left = 20
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
@@ -36,7 +36,7 @@ class TrafficSystemGUI(QWidget):
 
     def initImageGroup(self):
         self.ImageBox = QGraphicsView(self)
-        self.ImageBox.setGeometry(QRect(10, 10, 1471, 941))
+        self.ImageBox.setGeometry(QRect(10, 10, 1521, 941))
 
         self.ImageScreen = QLabel(self)
         rect = QRect(10, 10, 200, 200)
@@ -51,21 +51,31 @@ class TrafficSystemGUI(QWidget):
     # noinspection PyArgumentList,PyUnresolvedReferences
     def initButtons(self):
         self.VideoButtion = QPushButton(self)
-        self.VideoButtion.setGeometry(QRect(1500, 710, 151, 71))
+        self.VideoButtion.setGeometry(QRect(1580, 630, 241, 101))
         self.VideoButtion.setText("视频:off")
         self.VideoButtion.clicked.connect(self.clickVideoButton)
 
         font = QFont()
-        font.setPointSize(15)
+        font.setPointSize(24)
+        font.setFamily("楷体")
         self.VideoButtion.setFont(font)
 
         self.CameraButton = QPushButton(self)
-        self.CameraButton.setGeometry(QRect(1500, 880, 151, 71))
+        self.CameraButton.setGeometry(QRect(1580, 850, 241, 101))
         self.CameraButton.setText("摄像头:off")
         self.CameraButton.clicked.connect(self.clickCameraButton)
         self.CameraButton.setFont(font)
 
         self.cap = None
+
+    def initReadMe(self):
+        self.ReadMeLabel = QLabel(self)
+        font = QFont()
+        font.setFamily("黑体")
+        font.setPointSize(14)
+        self.ReadMeLabel.setFont(font)
+        self.ReadMeLabel.setText("<html><head/><body><p>绿色:行人</p>"
+                                 "<p>红色:汽车(轿车、卡车、摩托车)</p><p>蓝色:禁止标志</p></body></html>")
 
     @pyqtSlot()
     def clickVideoButton(self):
