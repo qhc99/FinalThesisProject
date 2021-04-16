@@ -41,13 +41,16 @@ cudnn.benchmark = True
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
-INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7}
+INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7, 11}
 
+# BGR
 for _cls in INTRESTED_CLASSES:
     if _cls == 0:
-        MODEL_OUTPUT_COLOR[_cls] = [102, 255, 51]
+        MODEL_OUTPUT_COLOR[_cls] = [0, 255, 0]  # green person
+    elif _cls == 11:
+        MODEL_OUTPUT_COLOR[_cls] = [255, 153, 0]  # sign blue
     else:
-        MODEL_OUTPUT_COLOR[_cls] = [255, 51, 0]
+        MODEL_OUTPUT_COLOR[_cls] = [0, 0, 255]  # cars red
 
 
 def yoloPredictionPaint(pred, tensor_img, origin_img, path_img='', img_window=False, webcam=False):
@@ -86,7 +89,7 @@ def signPredictionPaint(img, sign_pred):
         label = "prohibit"
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
-            plot_one_box(xyxy, img, label=label, color=[51, 51, 204], line_thickness=2)
+            plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
 
 
 class ImgsSource(Enum):
