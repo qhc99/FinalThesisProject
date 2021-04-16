@@ -6,7 +6,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import torch.backends.cudnn as cudnn
 
-from scripts import cv2_to_pil, pil_to_cv2, yoloPredict, signPredict, yolo_paint_interested_result, FONT
+from scripts import cv2_to_pil, pil_to_cv2, yoloPredict, signPredict, yoloPredictionPaint, FONT
 # from utils.torch_utils import select_device
 # from predict import load_model, get_names, get_colors
 from multiprocessing import Process, Queue
@@ -93,7 +93,7 @@ class TrafficSystemGUI(QWidget):
                 break
 
             yolo_pred, yolo_tensor_img = yoloPredict(img)
-            yolo_paint_interested_result(yolo_pred, yolo_tensor_img, img)
+            yoloPredictionPaint(yolo_pred, yolo_tensor_img, img)
 
             img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
             if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
