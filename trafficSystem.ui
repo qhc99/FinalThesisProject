@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1097</width>
-    <height>719</height>
+    <width>1669</width>
+    <height>963</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,8 +25,8 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>941</width>
-      <height>671</height>
+      <width>1471</width>
+      <height>941</height>
      </rect>
     </property>
     <property name="autoFillBackground">
@@ -76,27 +76,19 @@
      <cstring>label</cstring>
     </property>
    </widget>
-   <widget class="QLabel" name="FPSTextLabel">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>690</y>
-      <width>36</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>FPS:</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="VideoButtion">
     <property name="geometry">
      <rect>
-      <x>970</x>
-      <y>510</y>
-      <width>111</width>
-      <height>51</height>
+      <x>1500</x>
+      <y>710</y>
+      <width>151</width>
+      <height>71</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>15</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>视频:off</string>
@@ -105,11 +97,16 @@
    <widget class="QPushButton" name="CameraButton">
     <property name="geometry">
      <rect>
-      <x>970</x>
-      <y>630</y>
-      <width>111</width>
-      <height>51</height>
+      <x>1500</x>
+      <y>880</y>
+      <width>151</width>
+      <height>71</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>15</pointsize>
+     </font>
     </property>
     <property name="text">
      <string>摄像头:off</string>

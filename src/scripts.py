@@ -39,7 +39,7 @@ cudnn.benchmark = True
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
-def paint_interested_result(pred, tensor_img, origin_img, path_img='', img_window=False, webcam=False):
+def yolo_paint_interested_result(pred, tensor_img, origin_img, path_img='', img_window=False, webcam=False):
     # Process detections
     painted = False
     for i, det in enumerate(pred):  # detections per image
@@ -53,9 +53,8 @@ def paint_interested_result(pred, tensor_img, origin_img, path_img='', img_windo
             # Rescale boxes from img_size to im0 size
             det[:, :4] = scale_coords(tensor_img.shape[2:], det[:, :4], im0.shape).round()
             # Write results
-            # reversed(det)
             for (*xyxy, conf, cls) in reversed(det):
-                if int(cls.item()) in {0, 1, 2, 3, 5, 7}:
+                if int(cls.item()) in {0, 1, 2, 3, 5, 7, 11}:
                     painted = True
                     label = f'{MODEL_OUTPUT_NAMES[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=MODEL_OUTPUT_COLOR[int(cls)], line_thickness=3)
@@ -177,7 +176,7 @@ def paint(img, sign_detect, yolo_pred, yolo_tensor_img):
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
     # paint yolo
-    yolo_painted = paint_interested_result(yolo_pred, yolo_tensor_img, img)
+    yolo_painted = yolo_paint_interested_result(yolo_pred, yolo_tensor_img, img)
 
     return yolo_painted, sign_painted
 

@@ -3,11 +3,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-from scripts import paint, yoloPredict, signPredict
+from scripts import paint, yoloPredict, signPredict, yolo_paint_interested_result
 import cv2
 import torch.backends.cudnn as cudnn
 from utils.torch_utils import select_device
 from predict import load_model, get_names, get_colors
+
+temp = cv2.cuda.getCudaEnabledDeviceCount()
 
 # 1: 639
 # 3: 381
@@ -67,6 +69,7 @@ class TrafficSystemGUI(QWidget):
         self.VideoButtion = QPushButton(self)
         self.VideoButtion.setGeometry(QRect(970, 510, 111, 51))
         self.VideoButtion.setText("视频:off")
+        self.VideoButtion.clicked.connect(self.clickVideoButton)
 
         self.CameraButton = QPushButton(self)
         self.CameraButton.setGeometry(QRect(970, 630, 111, 51))
@@ -74,6 +77,44 @@ class TrafficSystemGUI(QWidget):
         self.CameraButton.clicked.connect(self.clickCameraButton)
 
         self.cap = None
+
+    @pyqtSlot()
+    def clickVideoButton(self):
+        if self.VideoButtion.text().endswith("off"):
+            self.CameraButton.setEnabled(False)
+            dialog = QFileDialog(self)
+            selected_info = dialog.getOpenFileName(caption="选择视频文件")
+            file_path = selected_info[0]
+            if len(file_path) > 0:
+                self.VideoButtion.setText(self.VideoButtion.text().replace("off", "on"))
+                self.threadPool.start(lambda: self.videoRunmodels(video_path=file_path))
+            else:
+                self.CameraButton.setEnabled(True)
+        else:
+            self.VideoButtion.setText(self.VideoButtion.text().replace("on", "off"))
+            self.cap.release()
+            self.ImageScreen.clear()
+            self.CameraButton.setEnabled(True)
+
+    @pyqtSlot()
+    def videoRunmodels(self, video_path):
+        self.cap = cv2.VideoCapture(video_path)
+
+        while self.cap.isOpened():
+            read_succ, img = self.cap.read()
+            if not read_succ:
+                break
+
+            yolo_pred, yolo_tensor_img = yoloPredict(img)
+            yolo_paint_interested_result(yolo_pred, yolo_tensor_img, img)
+
+            img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
+            if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
+                self.ImageScreen.resize(img.width(), img.height())
+                self.ImageScreenWidth = img.width()
+                self.ImageScreenHeight = img.height()
+
+            self.ImageScreen.setPixmap(QPixmap.fromImage(img))
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -118,7 +159,7 @@ class TrafficSystemGUI(QWidget):
             paint(img, sign_pred, yolo_pred, yolo_tensor_img)
             img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
 
-            if not(img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
+            if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
                 self.ImageScreen.resize(img.width(), img.height())
                 self.ImageScreenWidth = img.width()
                 self.ImageScreenHeight = img.height()
