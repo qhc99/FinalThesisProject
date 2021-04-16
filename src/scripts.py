@@ -112,21 +112,21 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
             yolo_in_queue.put(pil_img, True)
             sign_in_queue.put(pil_img, True)
 
-            img = yolo_out_queue.get(True)
-            img = pil_to_cv2(img)
+            yolo_painted = yolo_out_queue.get(True)
+            yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = sign_out_queue.get(True)
 
             if len(sign_pred) > 0:
                 for (x, y, w, h) in sign_pred:
-                    cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    cv2.rectangle(yolo_painted, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
             if SHOW_FPS:
                 current_latency = (time.time() - last_time) * 1000
                 last_time = time.time()
-                cv2.putText(img, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
+                cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
                             cv2.LINE_4)
 
-            cv2.imshow('camera', img)
+            cv2.imshow('camera', yolo_painted)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
