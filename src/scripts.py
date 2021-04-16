@@ -35,12 +35,19 @@ SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
 
 GPU_DEVICE = select_device('')
 YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
-# 0 1 2 3 5 7
 MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)
 MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
 cudnn.benchmark = True
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
+
+INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7}
+
+for _cls in INTRESTED_CLASSES:
+    if _cls == 0:
+        MODEL_OUTPUT_COLOR[_cls] = [102, 255, 51]
+    else:
+        MODEL_OUTPUT_COLOR[_cls] = [255, 51, 0]
 
 
 def yoloPredictionPaint(pred, tensor_img, origin_img, path_img='', img_window=False, webcam=False):
@@ -58,7 +65,7 @@ def yoloPredictionPaint(pred, tensor_img, origin_img, path_img='', img_window=Fa
             det[:, :4] = scale_coords(tensor_img.shape[2:], det[:, :4], im0.shape).round()
             # Write results
             for (*xyxy, conf, cls) in reversed(det):
-                if int(cls.item()) in {0, 1, 2, 3, 5, 7, 11}:
+                if int(cls.item()) in INTRESTED_CLASSES:
                     painted = True
                     label = f'{MODEL_OUTPUT_NAMES[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=MODEL_OUTPUT_COLOR[int(cls)], line_thickness=3)
@@ -76,8 +83,10 @@ def yoloPredictionPaint(pred, tensor_img, origin_img, path_img='', img_window=Fa
 
 def signPredictionPaint(img, sign_pred):
     if len(sign_pred) > 0:
+        label = "BlockSign"
         for (x, y, w, h) in sign_pred:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            xyxy = [x, y, x + w, y + h]
+            plot_one_box(xyxy, img, label=label, color=[51, 51, 204], line_thickness=3)
 
 
 class ImgsSource(Enum):
