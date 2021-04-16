@@ -1,29 +1,16 @@
 import sys
+import cv2
+import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-
-from scripts import paint, yoloPredict, signPredict, yolo_paint_interested_result
-import cv2
 import torch.backends.cudnn as cudnn
-from utils.torch_utils import select_device
-from predict import load_model, get_names, get_colors
 
-temp = cv2.cuda.getCudaEnabledDeviceCount()
+from scripts import cv2_to_pil, pil_to_cv2, yoloPredict, signPredict, yolo_paint_interested_result, FONT
+# from utils.torch_utils import select_device
+# from predict import load_model, get_names, get_colors
+from multiprocessing import Process, Queue
 
-# 1: 639
-# 3: 381
-MODEL_NUM = 3
-CASCADE_FILE_PATH = "../../dataset/TrafficBlockSign/models/model" + str(MODEL_NUM) + "/cascade.xml"
-SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)
-
-YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
-CONFI_THRES = 0.25
-IOU_THRES = 0.45
-GPU_DEVICE = select_device('')
-YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
-MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)  # 0 1 2 3 5 7
-MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
 cudnn.benchmark = True
 
 
@@ -132,39 +119,50 @@ class TrafficSystemGUI(QWidget):
     @pyqtSlot()
     def cameraRunModels(self):
         self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
-        sign_pred = None
-        yolo_pred, yolo_tensor_img = None, None
 
-        # warm up
-        if self.cap.isOpened():
-            _, img = self.cap.read()
-            sign_pred = signPredict(img)
-            yolo_pred, yolo_tensor_img = yoloPredict(img)
+        yolo_in_queue = Queue()
+        yolo_out_queue = Queue()
+        yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
+        yolo_process.start()
 
-        # process trick
-        process_yolo = True
+        sign_in_queue = Queue()
+        sign_out_queue = Queue()
+        sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
+        sign_process.start()
+
+        last_time = time.time()
 
         while self.cap.isOpened():
             read_succ, img = self.cap.read()
             if not read_succ:
                 break
 
-            if process_yolo:
-                process_yolo = not process_yolo
-                yolo_pred, yolo_tensor_img = yoloPredict(img)
-            else:
-                process_yolo = not process_yolo
-                sign_pred = signPredict(img)
+            pil_img = cv2_to_pil(img)
 
-            paint(img, sign_pred, yolo_pred, yolo_tensor_img)
-            img = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
+            yolo_in_queue.put(pil_img, True)
+            sign_in_queue.put(pil_img, True)
 
-            if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
-                self.ImageScreen.resize(img.width(), img.height())
-                self.ImageScreenWidth = img.width()
-                self.ImageScreenHeight = img.height()
+            yolo_painted = yolo_out_queue.get(True)
+            yolo_painted = pil_to_cv2(yolo_painted)
+            sign_pred = sign_out_queue.get(True)
 
-            self.ImageScreen.setPixmap(QPixmap.fromImage(img))
+            if len(sign_pred) > 0:
+                for (x, y, w, h) in sign_pred:
+                    cv2.rectangle(yolo_painted, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            current_latency = (time.time() - last_time) * 1000
+            last_time = time.time()
+            cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
+                        cv2.LINE_4)
+
+            res_img = QImage(yolo_painted.data, img.shape[1], img.shape[0], QImage.Format_RGB888).rgbSwapped()
+
+            if not (res_img.width() == self.ImageScreenWidth and res_img.height() == self.ImageScreenHeight):
+                self.ImageScreen.resize(res_img.width(), res_img.height())
+                self.ImageScreenWidth = res_img.width()
+                self.ImageScreenHeight = res_img.height()
+
+            self.ImageScreen.setPixmap(QPixmap.fromImage(res_img))
 
 
 if __name__ == '__main__':

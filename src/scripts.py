@@ -107,6 +107,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
             read_succ, img = cap.read()
             if not read_succ:
                 break
+
             pil_img = cv2_to_pil(img)
 
             yolo_in_queue.put(pil_img, True)
