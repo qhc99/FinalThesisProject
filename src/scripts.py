@@ -137,7 +137,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
 
             cv2.imshow('camera', res_img)
@@ -205,5 +205,5 @@ def pil_to_cv2(img):
 
 
 if __name__ == "__main__":
-    RunModels(SOURCE=ImgsSource.FILE, IMG_FOLDER_PATH="../../dataset/TrafficBlockSign/pos_imgs/img")
-    # RunModels()
+    # RunModels(SOURCE=ImgsSource.FILE, IMG_FOLDER_PATH="../../dataset/TrafficBlockSign/pos_imgs/img")
+    RunModels()

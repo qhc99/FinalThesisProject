@@ -23,10 +23,10 @@ class TrafficSystemGUI(QWidget):
         self.threadPool = QThreadPool()
 
     def initMainWindow(self):
-        self.__height = 719
-        self.__width = 1097
-        self.__top = 180
-        self.__left = 400
+        self.__height = 963
+        self.__width = 1669
+        self.__top = 50
+        self.__left = 100
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
@@ -36,14 +36,13 @@ class TrafficSystemGUI(QWidget):
 
     def initImageGroup(self):
         self.ImageBox = QGraphicsView(self)
-        self.ImageBox.setGeometry(QRect(10, 10, 941, 671))
+        self.ImageBox.setGeometry(QRect(10, 10, 1471, 941))
 
         self.ImageScreen = QLabel(self)
         rect = QRect(10, 10, 200, 200)
         self.ImageScreen.setGeometry(rect)
         self.ImageScreen.setText("")
 
-        self.ImageScreen.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding))
         self.ImageScreenTop = rect.top()
         self.ImageScreenLeft = rect.left()
         self.ImageScreenWidth = rect.width()
@@ -52,14 +51,19 @@ class TrafficSystemGUI(QWidget):
     # noinspection PyArgumentList,PyUnresolvedReferences
     def initButtons(self):
         self.VideoButtion = QPushButton(self)
-        self.VideoButtion.setGeometry(QRect(970, 510, 111, 51))
+        self.VideoButtion.setGeometry(QRect(1500, 710, 151, 71))
         self.VideoButtion.setText("视频:off")
         self.VideoButtion.clicked.connect(self.clickVideoButton)
 
+        font = QFont()
+        font.setPointSize(15)
+        self.VideoButtion.setFont(font)
+
         self.CameraButton = QPushButton(self)
-        self.CameraButton.setGeometry(QRect(970, 630, 111, 51))
+        self.CameraButton.setGeometry(QRect(1500, 880, 151, 71))
         self.CameraButton.setText("摄像头:off")
         self.CameraButton.clicked.connect(self.clickCameraButton)
+        self.CameraButton.setFont(font)
 
         self.cap = None
 
@@ -96,21 +100,26 @@ class TrafficSystemGUI(QWidget):
         sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
         sign_process.start()
 
+        last_time = time.time()
+
         while self.cap.isOpened():
             read_succ, img = self.cap.read()
             if not read_succ:
                 break
 
             pil_img = cv2_to_pil(img)
-
             yolo_in_queue.put(pil_img, True)
             sign_in_queue.put(pil_img, True)
-
             yolo_painted = yolo_out_queue.get(True)
             yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = sign_out_queue.get(True)
-
             signPredictionPaint(yolo_painted, sign_pred)
+
+            current_latency = (time.time() - last_time) * 1000
+            last_time = time.time()
+            cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+                        cv2.LINE_4)
+
             res_img = yolo_painted
 
             img = QImage(res_img.data, res_img.shape[1], res_img.shape[0], QImage.Format_RGB888).rgbSwapped()
@@ -119,7 +128,8 @@ class TrafficSystemGUI(QWidget):
                 self.ImageScreenWidth = img.width()
                 self.ImageScreenHeight = img.height()
 
-            self.ImageScreen.setPixmap(QPixmap.fromImage(img))
+            if self.VideoButtion.text().endswith("on"):
+                self.ImageScreen.setPixmap(QPixmap.fromImage(img))
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -159,17 +169,16 @@ class TrafficSystemGUI(QWidget):
 
             yolo_in_queue.put(pil_img, True)
             sign_in_queue.put(pil_img, True)
-
             yolo_painted = yolo_out_queue.get(True)
             yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = sign_out_queue.get(True)
-
             signPredictionPaint(yolo_painted, sign_pred)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 20), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
+
             res_img = yolo_painted
 
             img = QImage(res_img.data, res_img.shape[1], res_img.shape[0], QImage.Format_RGB888).rgbSwapped()
@@ -179,7 +188,8 @@ class TrafficSystemGUI(QWidget):
                 self.ImageScreenWidth = img.width()
                 self.ImageScreenHeight = img.height()
 
-            self.ImageScreen.setPixmap(QPixmap.fromImage(img))
+            if self.CameraButton.text().endswith("on"):
+                self.ImageScreen.setPixmap(QPixmap.fromImage(img))
 
 
 if __name__ == '__main__':
