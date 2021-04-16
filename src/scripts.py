@@ -90,24 +90,21 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
         raise Exception("path is None")
 
+    yolo_in_queue = Queue()
+    yolo_out_queue = Queue()
+    yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
+    yolo_process.start()
+
+    sign_in_queue = Queue()
+    sign_out_queue = Queue()
+    sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
+    sign_process.start()
+
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
-
         cv2.namedWindow("camera")
         cv2.moveWindow('camera', 300, 115)
-
-        # FPS init
         last_time = time.time()
-
-        yolo_in_queue = Queue()
-        yolo_out_queue = Queue()
-        yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
-        yolo_process.start()
-
-        sign_in_queue = Queue()
-        sign_out_queue = Queue()
-        sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
-        sign_process.start()
 
         while cap.isOpened():
             read_succ, img = cap.read()
@@ -139,16 +136,6 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None, SHOW_FPS=False):
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
         img_names_list = os.listdir(imgs_folder_path)
-
-        yolo_in_queue = Queue()
-        yolo_out_queue = Queue()
-        yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
-        yolo_process.start()
-
-        sign_in_queue = Queue()
-        sign_out_queue = Queue()
-        sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
-        sign_process.start()
 
         for img_name in img_names_list:
             img_path = os.path.join(imgs_folder_path, img_name)
