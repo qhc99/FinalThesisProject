@@ -88,7 +88,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
             cv2.imshow('camera', cv2_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        # mp.terminate()
+        mp.terminate()
 
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
@@ -138,16 +138,6 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
         out_queue.put(sign_detect, True)
-
-    # while True:
-    #     img = in_queue.get(True)
-    #     img = pil_to_cv2(img)
-    #     tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
-    #     yolo_pred = SIGN_MODEL(tensor_img)[0]
-    #     yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
-    #     for i, data in enumerate(yolo_pred):
-    #         yolo_pred[i] = data.cpu().detach()
-    #     out_queue.put((yolo_pred, tensor_img.shape[2:]), True)
 
 
 class ModelProcesses:
