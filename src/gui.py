@@ -6,8 +6,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import torch.backends.cudnn as cudnn
 
-from scripts import cv2_to_pil, pil_to_cv2, signPredictionPaint, FONT, yoloPredict, signPredict
-from multiprocessing import Process, Queue
+from scripts import cv2_to_pil, pil_to_cv2, signPaintPrediction, FONT, ModelProcesses
 
 cudnn.benchmark = True
 
@@ -85,6 +84,7 @@ class TrafficSystemGUI(QWidget):
             self.CameraButton.setEnabled(False)
             options = QFileDialog.Options()
             options |= QFileDialog.DontUseNativeDialog
+            # noinspection PyTypeChecker
             file_path, _ = QFileDialog.getOpenFileName(self, "选择视频文件", "",
                                                        "All Files (*);;Python Files (*.py)", options=options)
             if len(file_path) > 0:
@@ -102,15 +102,8 @@ class TrafficSystemGUI(QWidget):
     def videoRunmodels(self, video_path):
         self.cap = cv2.VideoCapture(video_path)
 
-        yolo_in_queue = Queue()
-        yolo_out_queue = Queue()
-        yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
-        yolo_process.start()
-
-        sign_in_queue = Queue()
-        sign_out_queue = Queue()
-        sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
-        sign_process.start()
+        mp = ModelProcesses()
+        mp.start()
 
         last_time = time.time()
 
@@ -120,12 +113,12 @@ class TrafficSystemGUI(QWidget):
                 break
 
             pil_img = cv2_to_pil(img)
-            yolo_in_queue.put(pil_img, True)
-            sign_in_queue.put(pil_img, True)
-            yolo_painted = yolo_out_queue.get(True)
+            mp.yolo_in.put(pil_img, True)
+            mp.sign_in.put(pil_img, True)
+            yolo_painted = mp.yolo_out.get(True)
             yolo_painted = pil_to_cv2(yolo_painted)
-            sign_pred = sign_out_queue.get(True)
-            signPredictionPaint(yolo_painted, sign_pred)
+            sign_pred = mp.sign_out.get(True)
+            signPaintPrediction(yolo_painted, sign_pred)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -142,8 +135,7 @@ class TrafficSystemGUI(QWidget):
 
             if self.VideoButtion.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
-        yolo_process.terminate()
-        sign_process.terminate()
+        mp.terminate()
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -162,16 +154,8 @@ class TrafficSystemGUI(QWidget):
     def cameraRunModels(self):
         self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
 
-        yolo_in_queue = Queue()
-        yolo_out_queue = Queue()
-        yolo_process = Process(target=yoloPredict, args=(yolo_in_queue, yolo_out_queue))
-        yolo_process.start()
-
-        sign_in_queue = Queue()
-        sign_out_queue = Queue()
-        sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
-        sign_process.start()
-
+        mp = ModelProcesses()
+        mp.start()
         last_time = time.time()
 
         while self.cap.isOpened():
@@ -181,12 +165,12 @@ class TrafficSystemGUI(QWidget):
 
             pil_img = cv2_to_pil(img)
 
-            yolo_in_queue.put(pil_img, True)
-            sign_in_queue.put(pil_img, True)
-            yolo_painted = yolo_out_queue.get(True)
+            mp.yolo_in.put(pil_img, True)
+            mp.sign_in.put(pil_img, True)
+            yolo_painted = mp.yolo_out.get(True)
             yolo_painted = pil_to_cv2(yolo_painted)
-            sign_pred = sign_out_queue.get(True)
-            signPredictionPaint(yolo_painted, sign_pred)
+            sign_pred = mp.sign_out.get(True)
+            signPaintPrediction(yolo_painted, sign_pred)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -204,8 +188,7 @@ class TrafficSystemGUI(QWidget):
 
             if self.CameraButton.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
-        yolo_process.terminate()
-        sign_process.terminate()
+        mp.terminate()
 
 
 if __name__ == '__main__':
