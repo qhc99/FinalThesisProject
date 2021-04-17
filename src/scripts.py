@@ -84,7 +84,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
     sign_in_queue = Queue()
     sign_out_queue = Queue()
     sign_process = Process(target=signPredict, args=(sign_in_queue, sign_out_queue))
-    sign_process.start()
+    # sign_process.start()
 
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
@@ -100,13 +100,13 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
             pil_img = cv2_to_pil(img)
 
             yolo_in_queue.put(pil_img, True)
-            sign_in_queue.put(pil_img, True)
+            # sign_in_queue.put(pil_img, True)
 
             yolo_painted = yolo_out_queue.get(True)
             yolo_painted = pil_to_cv2(yolo_painted)
-            sign_pred = sign_out_queue.get(True)
+            # sign_pred = sign_out_queue.get(True)
 
-            signPredictionPaint(yolo_painted, sign_pred)
+            # signPredictionPaint(yolo_painted, sign_pred)
             res_img = yolo_painted
 
             current_latency = (time.time() - last_time) * 1000
@@ -174,6 +174,27 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         out_queue.put(sign_detect, True)
 
 
+class ModelProcesses:
+    def __init__(self):
+        self.yolo_in = Queue()
+        self.yolo_out = Queue()
+        self.__yolo_process = Process(target=yoloPredict, args=(self.yolo_in, self.yolo_out))
+        self.__yolo_process.start()
+
+        self.sign_in = Queue()
+        self.sign_out = Queue()
+        self.__sign_process = Process(target=signPredict, args=(self.sign_in, self.sign_out))
+        self.__sign_process.start()
+
+    def start(self):
+        self.__yolo_process.start()
+        self.__sign_process.start()
+
+    def terminate(self):
+        self.__yolo_process.terminate()
+        self.__sign_process.terminate()
+
+
 def cv2_to_pil(img):
     return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
@@ -182,16 +203,7 @@ def pil_to_cv2(img):
     return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
 
-def copy(name):
-    src_dir = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
-    dst_dir = "../../yolo_sign_dataset/images/train"
-    copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
-
-
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.FILE, IMG_FOLDER_PATH="../../dataset/TrafficBlockSign/pos_imgs/img")
     # RunModels()
-    file_names = os.listdir("../../dataset/TrafficBlockSign/neg_imgs/imgs")
-    pool = Pool()
-    pool.map(copy, file_names)
     print("success")
