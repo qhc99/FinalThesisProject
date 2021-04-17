@@ -119,13 +119,12 @@ class TrafficSystemGUI(QWidget):
             yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = mp.sign_out.get(True)
             signPaintPrediction(yolo_painted, sign_pred)
+            res_img = yolo_painted
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
-
-            res_img = yolo_painted
 
             img = QImage(res_img.data, res_img.shape[1], res_img.shape[0], QImage.Format_RGB888).rgbSwapped()
             if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
@@ -171,13 +170,12 @@ class TrafficSystemGUI(QWidget):
             yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = mp.sign_out.get(True)
             signPaintPrediction(yolo_painted, sign_pred)
+            res_img = yolo_painted
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(yolo_painted, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
-
-            res_img = yolo_painted
 
             img = QImage(res_img.data, res_img.shape[1], res_img.shape[0], QImage.Format_RGB888).rgbSwapped()
 
