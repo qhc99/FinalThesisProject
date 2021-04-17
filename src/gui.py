@@ -20,6 +20,7 @@ class TrafficSystemGUI(QWidget):
         self.initMainWindow()
         self.initImageGroup()
         self.initButtons()
+        self.initReadMe()
         self.threadPool = QThreadPool()
 
     def initMainWindow(self):
@@ -70,6 +71,7 @@ class TrafficSystemGUI(QWidget):
 
     def initReadMe(self):
         self.ReadMeLabel = QLabel(self)
+        self.ReadMeLabel.setGeometry(QRect(1540, 270, 351, 131))
         font = QFont()
         font.setFamily("黑体")
         font.setPointSize(14)
@@ -81,10 +83,10 @@ class TrafficSystemGUI(QWidget):
     def clickVideoButton(self):
         if self.VideoButtion.text().endswith("off"):
             self.CameraButton.setEnabled(False)
-            dialog = QFileDialog(self)
-            # noinspection PyArgumentList
-            selected_info = dialog.getOpenFileName(caption="选择视频文件")
-            file_path = selected_info[0]
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog
+            file_path, _ = QFileDialog.getOpenFileName(self, "选择视频文件", "",
+                                                       "All Files (*);;Python Files (*.py)", options=options)
             if len(file_path) > 0:
                 self.VideoButtion.setText(self.VideoButtion.text().replace("off", "on"))
                 self.threadPool.start(lambda: self.videoRunmodels(video_path=file_path))
@@ -140,8 +142,8 @@ class TrafficSystemGUI(QWidget):
 
             if self.VideoButtion.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
-        yolo_process.join()
-        sign_process.join()
+        yolo_process.terminate()
+        sign_process.terminate()
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -202,8 +204,8 @@ class TrafficSystemGUI(QWidget):
 
             if self.CameraButton.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
-        yolo_process.join()
-        sign_process.join()
+        yolo_process.terminate()
+        sign_process.terminate()
 
 
 if __name__ == '__main__':
