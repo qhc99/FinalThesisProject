@@ -12,19 +12,26 @@ CASCADE_FILE_PATH = "../../dataset/TrafficBlockSign/models/model" + str(MODEL_NU
 YOLOV5L_PATH = "./parameters/original/yolov5l.pt"
 YOLOV5M_PATH = "./parameters/original/yolov5m.pt"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
+YOLO_SIGN_PATH = "./parameters/trained/best1.pt"
 
 GPU_DEVICE = select_device('')
-YOLO_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
-MODEL_OUTPUT_NAMES = get_names(YOLO_MODEL)
-MODEL_OUTPUT_COLOR = get_colors(MODEL_OUTPUT_NAMES)
-INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7, 11}
+TRAFFIC_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
+SIGN_MODEL = load_model(YOLO_SIGN_PATH, GPU_DEVICE)
+
+TRAFFIC_NAMES = get_names(TRAFFIC_MODEL)
+SIGN_NAMES = get_names(SIGN_MODEL)
+
+TRAFFIC_COLOR = get_colors(TRAFFIC_NAMES)
+SIGN_COLOR = [255, 153, 0]
+
+INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7}
 # BGR
 for _cls in INTRESTED_CLASSES:
     if _cls == 0:
-        MODEL_OUTPUT_COLOR[_cls] = [0, 255, 0]  # green person
+        TRAFFIC_COLOR[_cls] = [0, 255, 0]  # green person
     elif _cls == 11:
-        MODEL_OUTPUT_COLOR[_cls] = [255, 153, 0]  # sign blue
+        TRAFFIC_COLOR[_cls] = [255, 153, 0]  # sign blue
     else:
-        MODEL_OUTPUT_COLOR[_cls] = [0, 0, 255]   # cars red
+        TRAFFIC_COLOR[_cls] = [0, 0, 255]   # cars red
 
 SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE_FILE_PATH)

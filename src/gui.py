@@ -1,12 +1,14 @@
 import sys
-import cv2
 import time
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-import torch.backends.cudnn as cudnn
 
-from scripts import cv2_to_pil, pil_to_cv2, signPaintPrediction, FONT, ModelProcesses
+import cv2
+import torch.backends.cudnn as cudnn
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+
+from globals import TRAFFIC_NAMES, TRAFFIC_COLOR
+from scripts import cv2_to_pil, opencvPaintPrediction, yoloPaintPrediction, FONT, ModelProcesses
 
 cudnn.benchmark = True
 
@@ -108,31 +110,32 @@ class TrafficSystemGUI(QWidget):
         last_time = time.time()
 
         while self.cap.isOpened():
-            read_succ, img = self.cap.read()
+            read_succ, cv2_img = self.cap.read()
             if not read_succ:
                 break
 
-            pil_img = cv2_to_pil(img)
-            mp.yolo_in.put(pil_img, True)
+            pil_img = cv2_to_pil(cv2_img)
+            mp.traffic_in.put(pil_img, True)
             mp.sign_in.put(pil_img, True)
-            yolo_painted = mp.yolo_out.get(True)
-            yolo_painted = pil_to_cv2(yolo_painted)
+
             sign_pred = mp.sign_out.get(True)
-            signPaintPrediction(yolo_painted, sign_pred)
-            res_img = yolo_painted
+            opencvPaintPrediction(sign_pred, cv2_img)
+            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
+            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
 
-            img = QImage(res_img.data, res_img.shape[1], res_img.shape[0], QImage.Format_RGB888).rgbSwapped()
+            img = QImage(cv2_img.data, cv2_img.shape[1], cv2_img.shape[0], QImage.Format_RGB888).rgbSwapped()
             if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
                 self.ImageScreen.resize(img.width(), img.height())
                 self.ImageScreenWidth = img.width()
                 self.ImageScreenHeight = img.height()
 
             if self.VideoButtion.text().endswith("on"):
+                # noinspection PyArgumentList
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
         mp.terminate()
 
@@ -158,26 +161,25 @@ class TrafficSystemGUI(QWidget):
         last_time = time.time()
 
         while self.cap.isOpened():
-            read_succ, img = self.cap.read()
+            read_succ, cv2_img = self.cap.read()
             if not read_succ:
                 break
 
-            pil_img = cv2_to_pil(img)
-
-            mp.yolo_in.put(pil_img, True)
+            pil_img = cv2_to_pil(cv2_img)
+            mp.traffic_in.put(pil_img, True)
             mp.sign_in.put(pil_img, True)
-            yolo_painted = mp.yolo_out.get(True)
-            yolo_painted = pil_to_cv2(yolo_painted)
+
             sign_pred = mp.sign_out.get(True)
-            signPaintPrediction(yolo_painted, sign_pred)
-            res_img = yolo_painted
+            opencvPaintPrediction(sign_pred, cv2_img)
+            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
+            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
 
-            img = QImage(res_img.data, res_img.shape[1], res_img.shape[0], QImage.Format_RGB888).rgbSwapped()
+            img = QImage(cv2_img.data, cv2_img.shape[1], cv2_img.shape[0], QImage.Format_RGB888).rgbSwapped()
 
             if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
                 self.ImageScreen.resize(img.width(), img.height())

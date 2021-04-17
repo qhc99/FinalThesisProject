@@ -48,6 +48,7 @@ def get_colors(names):
 
 def load_model(weights_path, device):
     return attempt_load(weights_path, map_location=device).half()
+    # return attempt_load(weights_path, map_location=device)
 
 
 def img_resize(img_origin, img_size=640):

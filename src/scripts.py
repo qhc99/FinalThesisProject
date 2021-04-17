@@ -2,7 +2,6 @@ import cv2
 import time
 import os
 import numpy as np
-from pathlib import Path
 from enum import Enum
 from PIL import Image
 import torch.backends.cudnn as cudnn
@@ -12,7 +11,7 @@ from predict import img_resize, img_transform
 from utils.general import non_max_suppression
 from utils.plots import plot_one_box
 from utils.general import scale_coords
-from globals import YOLO_MODEL, MODEL_OUTPUT_COLOR, MODEL_OUTPUT_NAMES, INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER
+from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES, INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER
 
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
@@ -25,38 +24,23 @@ cudnn.benchmark = True
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
-def yoloPaintPrediction(pred, tensor_img, origin_img, path_img='', img_window=False, webcam=False):
+# tensor_img[2:]
+def yoloPaintPrediction(pred, tensor_shape, origin_img, names, colors):
     # Process detections
-    painted = False
     for i, det in enumerate(pred):  # detections per image
-        if webcam:  # batch_size >= 1
-            p, s, im0 = path_img[i], '%g: ' % i, origin_img[i].copy()
-        else:
-            p, s, im0 = path_img, '', origin_img
-        p = Path(p)  # to Path
-        s += '%gx%g ' % tensor_img.shape[2:]  # print string
+        s, im0 = '', origin_img
+        s += '%gx%g ' % tensor_shape  # print string
         if len(det):
             # Rescale boxes from img_size to im0 size
-            det[:, :4] = scale_coords(tensor_img.shape[2:], det[:, :4], im0.shape).round()
+            det[:, :4] = scale_coords(tensor_shape, det[:, :4], im0.shape).round()
             # Write results
             for (*xyxy, conf, cls) in reversed(det):
                 if int(cls.item()) in INTRESTED_CLASSES:
-                    painted = True
-                    label = f'{MODEL_OUTPUT_NAMES[int(cls)]} {conf:.2f}'
-                    plot_one_box(xyxy, im0, label=label, color=MODEL_OUTPUT_COLOR[int(cls)], line_thickness=2)
-
-            if img_window:
-                if not webcam:
-                    cv2.imshow(str(p), im0)
-                    k = cv2.waitKey(0) & 0xFF  # standard grammar for 64-bit machine
-                    if k == 27:  # enter ESC to close window
-                        cv2.destroyAllWindows()
-                else:
-                    raise Exception("not implement.")
-    return painted
+                    label = f'{names[int(cls)]} {conf:.2f}'
+                    plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
 
 
-def signPaintPrediction(img, sign_pred):
+def opencvPaintPrediction(sign_pred, img):
     if len(sign_pred) > 0:
         label = "prohibit"
         for (x, y, w, h) in sign_pred:
@@ -84,31 +68,27 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
         last_time = time.time()
 
         while cap.isOpened():
-            read_succ, img = cap.read()
+            read_succ, cv2_img = cap.read()
             if not read_succ:
                 break
-
-            pil_img = cv2_to_pil(img)
-
-            mp.yolo_in.put(pil_img, True)
+            pil_img = cv2_to_pil(cv2_img)
+            mp.traffic_in.put(pil_img, True)
             mp.sign_in.put(pil_img, True)
 
-            yolo_painted = mp.yolo_out.get(True)
-            yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = mp.sign_out.get(True)
-
-            signPaintPrediction(yolo_painted, sign_pred)
-            res_img = yolo_painted
+            opencvPaintPrediction(sign_pred, cv2_img)
+            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
+            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
-            cv2.putText(res_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
 
-            cv2.imshow('camera', res_img)
+            cv2.imshow('camera', cv2_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        mp.terminate()
+        # mp.terminate()
 
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
@@ -116,21 +96,18 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
 
         for img_name in img_names_list:
             img_path = os.path.join(imgs_folder_path, img_name)
-            img = cv2.imread(img_path)
 
-            pil_img = cv2_to_pil(img)
-
-            mp.yolo_in.put(pil_img, True)
+            cv2_img = cv2.imread(img_path)
+            pil_img = cv2_to_pil(cv2_img)
+            mp.traffic_in.put(pil_img, True)
             mp.sign_in.put(pil_img, True)
 
-            yolo_painted = mp.yolo_out.get(True)
-            yolo_painted = pil_to_cv2(yolo_painted)
             sign_pred = mp.sign_out.get(True)
+            opencvPaintPrediction(sign_pred, cv2_img)
+            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
+            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
-            signPaintPrediction(yolo_painted, sign_pred)
-            res_img = yolo_painted
-
-            cv2.imshow('camera', res_img)
+            cv2.imshow('camera', cv2_img)
             if cv2.waitKey(3000) & 0xFF == ord('q'):
                 break
         mp.terminate()
@@ -142,16 +119,16 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
         raise Exception("unknown img source")
 
 
-def yoloPredict(in_queue: Queue, out_queue: Queue):
+def trafficPredict(in_queue: Queue, out_queue: Queue):
     while True:
         img = in_queue.get(True)
         img = pil_to_cv2(img)
         tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
-        yolo_pred = YOLO_MODEL(tensor_img)[0]
+        yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
         yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
-        yoloPaintPrediction(yolo_pred, tensor_img, img)
-        img = cv2_to_pil(img)
-        out_queue.put(img, True)
+        for i, data in enumerate(yolo_pred):
+            yolo_pred[i] = data.cpu().detach()
+        out_queue.put((yolo_pred, tensor_img.shape[2:]), True)
 
 
 def signPredict(in_queue: Queue, out_queue: Queue):
@@ -162,23 +139,33 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
         out_queue.put(sign_detect, True)
 
+    # while True:
+    #     img = in_queue.get(True)
+    #     img = pil_to_cv2(img)
+    #     tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
+    #     yolo_pred = SIGN_MODEL(tensor_img)[0]
+    #     yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
+    #     for i, data in enumerate(yolo_pred):
+    #         yolo_pred[i] = data.cpu().detach()
+    #     out_queue.put((yolo_pred, tensor_img.shape[2:]), True)
+
 
 class ModelProcesses:
     def __init__(self):
-        self.yolo_in = Queue()
-        self.yolo_out = Queue()
-        self.__yolo_process = Process(target=yoloPredict, args=(self.yolo_in, self.yolo_out))
+        self.traffic_in = Queue()
+        self.traffic_out = Queue()
+        self.__traffic_process = Process(target=trafficPredict, args=(self.traffic_in, self.traffic_out))
 
         self.sign_in = Queue()
         self.sign_out = Queue()
         self.__sign_process = Process(target=signPredict, args=(self.sign_in, self.sign_out))
 
     def start(self):
-        self.__yolo_process.start()
+        self.__traffic_process.start()
         self.__sign_process.start()
 
     def terminate(self):
-        self.__yolo_process.terminate()
+        self.__traffic_process.terminate()
         self.__sign_process.terminate()
 
 
