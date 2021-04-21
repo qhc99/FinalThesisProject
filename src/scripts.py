@@ -42,7 +42,7 @@ def yoloPaintPrediction(pred, tensor_shape, origin_img, names, colors):
 
 def opencvPaintPrediction(sign_pred, img):
     if len(sign_pred) > 0:
-        label = "prohibit"
+        label = "禁止标志"
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
             plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
