@@ -17,7 +17,7 @@ cudnn.benchmark = True
 
 
 # tensor_img[2:]
-def yoloPaintPrediction(pred, tensor_shape, origin_img, names, colors):
+def yoloPaint(pred, tensor_shape, origin_img, names, colors):
     # Process detections
     for i, det in enumerate(pred):  # detections per image
         s, im0 = '', origin_img
@@ -32,7 +32,7 @@ def yoloPaintPrediction(pred, tensor_shape, origin_img, names, colors):
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
 
 
-def opencvPaintPrediction(sign_pred, img):
+def opencvPaint(sign_pred, img):
     if len(sign_pred) > 0:
         label = "prohibit"
         for (x, y, w, h) in sign_pred:
@@ -68,9 +68,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             mp.sign_in.put(pil_img, True)
 
             sign_pred = mp.sign_out.get(True)
-            opencvPaintPrediction(sign_pred, cv2_img)
+            opencvPaint(sign_pred, cv2_img)
             (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
-            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+            yoloPaint(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -95,9 +95,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             mp.sign_in.put(pil_img, True)
 
             sign_pred = mp.sign_out.get(True)
-            opencvPaintPrediction(sign_pred, cv2_img)
+            opencvPaint(sign_pred, cv2_img)
             (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
-            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+            yoloPaint(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             cv2.imshow('camera', cv2_img)
             if cv2.waitKey(3000) & 0xFF == ord('q'):
@@ -119,9 +119,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             mp.sign_in.put(pil_img, True)
 
             sign_pred = mp.sign_out.get(True)
-            opencvPaintPrediction(sign_pred, cv2_img)
+            opencvPaint(sign_pred, cv2_img)
             (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
-            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+            yoloPaint(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -146,7 +146,7 @@ def trafficPredict(in_queue: Queue, out_queue: Queue):
         yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
         for i, data in enumerate(yolo_pred):
             yolo_pred[i] = data.cpu().detach()
-        out_queue.put((yolo_pred, tensor_img.shape[2:]), True)
+        out_queue.put((yolo_pred, tensorShape(tensor_img)), True)
 
 
 def signPredict(in_queue: Queue, out_queue: Queue):
@@ -183,6 +183,10 @@ def cv2_to_pil(img):
 
 def pil_to_cv2(img):
     return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+
+
+def tensorShape(tensor_img):
+    return tensor_img.shape[2:]
 
 
 if __name__ == "__main__":

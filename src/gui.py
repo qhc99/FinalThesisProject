@@ -8,7 +8,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from globals import TRAFFIC_NAMES, TRAFFIC_COLOR, GPU_DEVICE, TRAFFIC_MODEL
-from scripts import cv2_to_pil, opencvPaintPrediction, yoloPaintPrediction, FONT, ModelProcesses, CONFI_THRES, IOU_THRES
+from scripts import cv2_to_pil, opencvPaint, yoloPaint, FONT, ModelProcesses, CONFI_THRES, IOU_THRES, tensorShape
 from predict import img_resize, img_transform, non_max_suppression
 
 cudnn.benchmark = True
@@ -96,10 +96,13 @@ class TrafficSystemGUI(QWidget):
             else:
                 self.CameraButton.setEnabled(True)
         else:
-            self.VideoButtion.setText(self.VideoButtion.text().replace("on", "off"))
-            self.cap.release()
-            self.ImageScreen.clear()
-            self.CameraButton.setEnabled(True)
+            self.resetVideo()
+
+    def resetVideo(self):
+        self.VideoButtion.setText(self.VideoButtion.text().replace("on", "off"))
+        self.cap.release()
+        self.ImageScreen.clear()
+        self.CameraButton.setEnabled(True)
 
     @pyqtSlot()
     def videoRunmodels(self, video_path):
@@ -118,7 +121,7 @@ class TrafficSystemGUI(QWidget):
             tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
             yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
             yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
-            yoloPaintPrediction(yolo_pred, tensor_img.shape[2:], cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+            yoloPaint(yolo_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -135,6 +138,7 @@ class TrafficSystemGUI(QWidget):
                 # noinspection PyArgumentList
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
         mp.terminate()
+        self.resetVideo()
 
     @pyqtSlot()
     def clickCameraButton(self):
@@ -165,7 +169,7 @@ class TrafficSystemGUI(QWidget):
             tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
             yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
             yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
-            yoloPaintPrediction(yolo_pred, tensor_img.shape[2:], cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+            yoloPaint(yolo_pred, tensor_img.shape[2:], cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
