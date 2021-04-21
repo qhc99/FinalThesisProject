@@ -12,7 +12,7 @@ from utils.general import non_max_suppression
 from utils.plots import plot_one_box
 from utils.general import scale_coords
 from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES,\
-    INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT
+    INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT, POS_IMGS_FOLDER_PATH
 cudnn.benchmark = True
 
 
@@ -190,6 +190,7 @@ def tensorShape(tensor_img):
 
 
 if __name__ == "__main__":
-    RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/sign_demo_1.avi")
+    # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/sign_demo_1.avi")
+    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
     # RunModels()
     print("success")

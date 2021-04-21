@@ -18,6 +18,7 @@ MODEL_NUM = "1"
 OVERTRAINED_SIGN_MODEL_PATH = "./parameters/trained/lbp_overtrained_no_break.xml"
 LBP_33000 = "./parameters/trained/lbp_24_33000_break.xml"
 LBP_EXP = "./parameters/trained/lbp_fix_pos_12000.xml"
+LBP_TEST = "./parameters/trained/test.xml"
 
 YOLOV5L_PATH = "./parameters/original/yolov5l.pt"
 YOLOV5M_PATH = "./parameters/original/yolov5m.pt"
