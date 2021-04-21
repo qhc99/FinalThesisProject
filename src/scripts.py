@@ -11,17 +11,9 @@ from predict import img_resize, img_transform
 from utils.general import non_max_suppression
 from utils.plots import plot_one_box
 from utils.general import scale_coords
-from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES, INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER
-
-
-NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
-POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
-POS_HARDIMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/hard_imgs"
-
-CONFI_THRES = 0.25
-IOU_THRES = 0.45
+from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES,\
+    INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT
 cudnn.benchmark = True
-FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
 # tensor_img[2:]

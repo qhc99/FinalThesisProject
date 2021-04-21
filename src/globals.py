@@ -3,6 +3,15 @@ from predict import load_model, get_names, get_colors
 import cv2
 
 
+NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
+POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
+
+CONFI_THRES = 0.25
+IOU_THRES = 0.45
+
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+
+
 MODEL_NUM = "1"
 
 # 1: 381
