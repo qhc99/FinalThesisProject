@@ -34,7 +34,7 @@ def yoloPaintPrediction(pred, tensor_shape, origin_img, names, colors):
 
 def opencvPaintPrediction(sign_pred, img):
     if len(sign_pred) > 0:
-        label = "禁止标志"
+        label = "prohibit"
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
             plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
@@ -46,8 +46,8 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
-def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
-    if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (IMG_FOLDER_PATH is None):
+def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
+    if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (SOURCE_PATH is None):
         raise Exception("path is None")
 
     mp = ModelProcesses()
@@ -83,7 +83,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
         mp.terminate()
 
     elif SOURCE == ImgsSource.FILE:
-        imgs_folder_path = os.path.join(os.getcwd(), IMG_FOLDER_PATH)
+        imgs_folder_path = os.path.join(os.getcwd(), SOURCE_PATH)
         img_names_list = os.listdir(imgs_folder_path)
 
         for img_name in img_names_list:
@@ -105,7 +105,33 @@ def RunModels(SOURCE=ImgsSource.CAMERA, IMG_FOLDER_PATH=None):
         mp.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
-        raise Exception("not implemented")
+        cap = cv2.VideoCapture(SOURCE_PATH)
+        cv2.namedWindow("video")
+        cv2.moveWindow('video', 300, 115)
+        last_time = time.time()
+
+        while cap.isOpened():
+            read_succ, cv2_img = cap.read()
+            if not read_succ:
+                break
+            pil_img = cv2_to_pil(cv2_img)
+            mp.traffic_in.put(pil_img, True)
+            mp.sign_in.put(pil_img, True)
+
+            sign_pred = mp.sign_out.get(True)
+            opencvPaintPrediction(sign_pred, cv2_img)
+            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
+            yoloPaintPrediction(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+
+            current_latency = (time.time() - last_time) * 1000
+            last_time = time.time()
+            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+                        cv2.LINE_4)
+
+            cv2.imshow('video', cv2_img)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        mp.terminate()
 
     else:
         raise Exception("unknown img source")
@@ -160,6 +186,6 @@ def pil_to_cv2(img):
 
 
 if __name__ == "__main__":
-    # RunModels(SOURCE=ImgsSource.FILE, IMG_FOLDER_PATH="../../dataset/TrafficBlockSign/pos_imgs/img")
-    RunModels()
+    RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/sign_demo_1.avi")
+    # RunModels()
     print("success")

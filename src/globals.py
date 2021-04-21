@@ -27,13 +27,7 @@ GPU_DEVICE = select_device('')
 TRAFFIC_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
 
 TRAFFIC_NAMES = get_names(TRAFFIC_MODEL)
-TRAFFIC_NAMES[0] = "行人"
-TRAFFIC_NAMES[1] = "自行车"
-TRAFFIC_NAMES[2] = "汽车"
-TRAFFIC_NAMES[3] = "摩托车"
-TRAFFIC_NAMES[5] = "公交车"
-TRAFFIC_NAMES[7] = "卡车"
-TRAFFIC_NAMES[11] = "禁止标志"
+TRAFFIC_NAMES[11] = "prohibit"
 
 TRAFFIC_COLOR = get_colors(TRAFFIC_NAMES)
 
