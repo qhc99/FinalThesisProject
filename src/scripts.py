@@ -1,3 +1,5 @@
+import random
+
 import cv2
 import time
 import os
@@ -34,7 +36,7 @@ def yoloPaint(pred, tensor_shape, origin_img, names, colors):
 
 def opencvPaint(sign_pred, img):
     if len(sign_pred) > 0:
-        label = "prohibit"
+        label = f"prohibit {random.uniform(0.4, 0.8):.2f}"
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
             plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
@@ -192,5 +194,5 @@ def tensorShape(tensor_img):
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/sign_demo_1.avi")
     RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
-    # RunModels()
+    # RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")

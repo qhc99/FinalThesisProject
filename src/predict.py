@@ -48,7 +48,6 @@ def get_colors(names):
 
 def load_model(weights_path, device):
     return attempt_load(weights_path, map_location=device).half()
-    # return attempt_load(weights_path, map_location=device)
 
 
 def img_resize(img_origin, img_size=640):
@@ -96,14 +95,3 @@ def paint_result(pred, tensor_img, origin_img, names, colors, path_img='', img_w
                 else:
                     raise Exception("not implement.")
     return origin_img
-
-
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('--weights', nargs='+', type=str, default='parameters/original/yolov5s.pt', help='model.pt '
-#                                                                                                          'path(s)')
-#     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
-#     opt = parser.parse_args()
-#     print(opt)
-#     with torch.no_grad():
-#         pipeline(opt.source, opt.weights, img_window=True)
