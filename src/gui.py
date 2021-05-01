@@ -8,8 +8,9 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from globals import TRAFFIC_NAMES, TRAFFIC_COLOR, GPU_DEVICE, TRAFFIC_MODEL
-from scripts import cv2_to_pil, opencvPaint, yoloPaint, FONT, ModelProcesses, CONFI_THRES, IOU_THRES, tensorShape
+from scripts import cv2_to_pil, opencvPaint, yoloPaint, FONT, CONFI_THRES, IOU_THRES, tensorShape, signPredict
 from predict import img_resize, img_transform, non_max_suppression
+from multiprocessing import Queue, Process
 
 cudnn.benchmark = True
 
@@ -108,8 +109,10 @@ class TrafficSystemGUI(QWidget):
     def videoRunmodels(self, video_path):
         self.cap = cv2.VideoCapture(video_path)
 
-        mp = ModelProcesses()
-        mp.start()
+        sign_in = Queue()
+        sign_out = Queue()
+        sign_process = Process(target=signPredict, args=(sign_in, sign_out))
+        sign_process.start()
 
         last_time = time.time()
 
@@ -118,10 +121,16 @@ class TrafficSystemGUI(QWidget):
             if not read_succ:
                 break
 
+            pil_img = cv2_to_pil(cv2_img)
+            sign_in.put(pil_img, True)
+
             tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
             yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
             yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(yolo_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+
+            sign_pred = sign_out.get(True)
+            opencvPaint(sign_pred, cv2_img)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -137,7 +146,7 @@ class TrafficSystemGUI(QWidget):
             if self.VideoButtion.text().endswith("on"):
                 # noinspection PyArgumentList
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
-        mp.terminate()
+        sign_process.terminate()
         self.resetVideo()
 
     @pyqtSlot()
@@ -157,8 +166,11 @@ class TrafficSystemGUI(QWidget):
     def cameraRunModels(self):
         self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
 
-        mp = ModelProcesses()
+        sign_in = Queue()
+        sign_out = Queue()
+        mp = Process(target=signPredict, args=(sign_in, sign_out))
         mp.start()
+
         last_time = time.time()
 
         while self.cap.isOpened():
@@ -166,10 +178,16 @@ class TrafficSystemGUI(QWidget):
             if not read_succ:
                 break
 
+            pil_img = cv2_to_pil(cv2_img)
+            sign_in.put(pil_img, True)
+
             tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
             yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
             yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(yolo_pred, tensor_img.shape[2:], cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+
+            sign_pred = sign_out.get(True)
+            opencvPaint(sign_pred, cv2_img)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()

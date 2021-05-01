@@ -52,8 +52,10 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (SOURCE_PATH is None):
         raise Exception("path is None")
 
-    mp = ModelProcesses()
-    mp.start()
+    sign_in = Queue()
+    sign_out = Queue()
+    sign_process = Process(target=signPredict, args=(sign_in, sign_out))
+    sign_process.start()
 
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
@@ -66,23 +68,24 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             if not read_succ:
                 break
             pil_img = cv2_to_pil(cv2_img)
-            mp.traffic_in.put(pil_img, True)
-            mp.sign_in.put(pil_img, True)
+            sign_in.put(pil_img, True)
 
-            sign_pred = mp.sign_out.get(True)
+            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
+            traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
+            yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+
+            sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
-            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
-            yoloPaint(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
             cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
-
             cv2.imshow('camera', cv2_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        mp.terminate()
+        sign_process.terminate()
 
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), SOURCE_PATH)
@@ -90,21 +93,23 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
 
         for img_name in img_names_list:
             img_path = os.path.join(imgs_folder_path, img_name)
-
             cv2_img = cv2.imread(img_path)
-            pil_img = cv2_to_pil(cv2_img)
-            mp.traffic_in.put(pil_img, True)
-            mp.sign_in.put(pil_img, True)
 
-            sign_pred = mp.sign_out.get(True)
+            pil_img = cv2_to_pil(cv2_img)
+            sign_in.put(pil_img, True)
+
+            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
+            traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
+            yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+
+            sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
-            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
-            yoloPaint(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             cv2.imshow('camera', cv2_img)
             if cv2.waitKey(3000) & 0xFF == ord('q'):
                 break
-        mp.terminate()
+        sign_process.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
         cap = cv2.VideoCapture(SOURCE_PATH)
@@ -117,13 +122,15 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             if not read_succ:
                 break
             pil_img = cv2_to_pil(cv2_img)
-            mp.traffic_in.put(pil_img, True)
-            mp.sign_in.put(pil_img, True)
+            sign_in.put(pil_img, True)
 
-            sign_pred = mp.sign_out.get(True)
+            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
+            traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
+            yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+
+            sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
-            (traffic_pred, tensor_shape) = mp.traffic_out.get(True)
-            yoloPaint(traffic_pred, tensor_shape, cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
 
             current_latency = (time.time() - last_time) * 1000
             last_time = time.time()
@@ -133,7 +140,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             cv2.imshow('video', cv2_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        mp.terminate()
+        sign_process.terminate()
 
     else:
         raise Exception("unknown img source")
@@ -160,25 +167,6 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         out_queue.put(sign_detect, True)
 
 
-class ModelProcesses:
-    def __init__(self):
-        self.traffic_in = Queue()
-        self.traffic_out = Queue()
-        self.__traffic_process = Process(target=trafficPredict, args=(self.traffic_in, self.traffic_out))
-
-        self.sign_in = Queue()
-        self.sign_out = Queue()
-        self.__sign_process = Process(target=signPredict, args=(self.sign_in, self.sign_out))
-
-    def start(self):
-        self.__traffic_process.start()
-        self.__sign_process.start()
-
-    def terminate(self):
-        self.__traffic_process.terminate()
-        self.__sign_process.terminate()
-
-
 def cv2_to_pil(img):
     return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
@@ -193,6 +181,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/sign_demo_1.avi")
-    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
-    # RunModels(SOURCE=ImgsSource.CAMERA)
+    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
+    RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")

@@ -26,6 +26,7 @@ YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
 GPU_DEVICE = select_device('')
 TRAFFIC_MODEL = load_model(YOLOV5S_PATH, GPU_DEVICE)
+TRAFFIC_MODEL.eval()
 
 TRAFFIC_NAMES = get_names(TRAFFIC_MODEL)
 TRAFFIC_NAMES[11] = "prohibit"

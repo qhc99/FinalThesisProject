@@ -33,15 +33,14 @@ def process(img_name: str):
 
 def printBrokenImages():
     img_names = os.listdir(NEG_IMGS_FOLDER_PATH)
+    with Pool() as pool:
+        try:
+            pool.map(process, img_names)
+        except Exception as e:
+            print(e)
 
-    pool: Pool = Pool()
-    try:
-        pool.map(process, img_names)
-    except Exception as e:
-        print(e)
 
-
-def transform(img_path:  str, output_path:  str):
+def transform(img_path: str, output_path: str):
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     ret_img = cv2.merge([img, img, img, img])
     mt_image.imsave(fname=output_path, format="svg", arr=ret_img)
@@ -53,10 +52,10 @@ def copy(name):
     copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
 
 
+def checkCCTSDB():
+    truth_path = "G:\\download\\CCTSDB-master\\GroundTruth\\groundtruth0000-9999.txt"
+    main_folder_path = "G:\\download\\CCTSDB-master\\img"
+
+
 if __name__ == "__main__":
-    # transform("resources/hohai.jpg", "resources/hohai.svg")
-    # print("end")
-    # file_names = os.listdir("../../dataset/TrafficBlockSign/neg_imgs/imgs")
-    # pool = Pool()
-    # pool.map(copy, file_names)
     print("success")
