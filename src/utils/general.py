@@ -81,9 +81,9 @@ def check_file(file):
         return files[0]  # return file
 
 
-def check_dataset(dict):
+def check_dataset(dictionary):
     # Download dataset if not found locally
-    val, s = dict.get('val'), dict.get('download')
+    val, s = dictionary.get('val'), dictionary.get('download')
     if val and len(val):
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
@@ -116,9 +116,9 @@ def one_cycle(y1=0.0, y2=1.0, steps=100):
     return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
 
 
-def colorstr(*input):
+def colorstr(*INPUT):
     # Colors a string https://en.wikipedia.org/wiki/ANSI_escape_code, i.e.  colorstr('blue', 'hello world')
-    *prefix, string = input  # color arguments, string
+    *prefix, string = INPUT  # color arguments, string
     colors = {'black': '\033[30m',  # basic colors
               'red': '\033[31m',
               'green': '\033[32m',
@@ -331,11 +331,11 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
         # Cat apriori labels if autolabelling
         if labels and len(labels[xi]):
-            l = labels[xi]
-            v = torch.zeros((len(l), nc + 5), device=x.device)
-            v[:, :4] = l[:, 1:5]  # box
+            l_temp = labels[xi]
+            v = torch.zeros((len(l_temp), nc + 5), device=x.device)
+            v[:, :4] = l_temp[:, 1:5]  # box
             v[:, 4] = 1.0  # conf
-            v[range(len(l)), l[:, 0].long() + 5] = 1.0  # cls
+            v[range(len(l_temp)), l_temp[:, 0].long() + 5] = 1.0  # cls
             x = torch.cat((x, v), 0)
 
         # If none remain process next image
