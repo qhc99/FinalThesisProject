@@ -59,8 +59,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
 
     if SOURCE == ImgsSource.CAMERA:
         cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
-        cv2.namedWindow("camera")
-        cv2.moveWindow('camera', 300, 115)
+        windows_show = False
         last_time = time.time()
 
         while cap.isOpened():
@@ -82,6 +81,12 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             last_time = time.time()
             cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
+
+            if not windows_show:
+                cv2.namedWindow("camera")
+                cv2.moveWindow('camera', 300, 115)
+                windows_show = True
+
             cv2.imshow('camera', cv2_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -113,8 +118,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
 
     elif SOURCE == ImgsSource.VIDEO:
         cap = cv2.VideoCapture(SOURCE_PATH)
-        cv2.namedWindow("video")
-        cv2.moveWindow('video', 300, 115)
+        window_show = False
         last_time = time.time()
 
         while cap.isOpened():
@@ -136,6 +140,11 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             last_time = time.time()
             cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
+
+            if not window_show:
+                cv2.namedWindow("video")
+                cv2.moveWindow('video', 300, 115)
+                window_show = True
 
             cv2.imshow('video', cv2_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -180,7 +189,7 @@ def tensorShape(tensor_img):
 
 
 if __name__ == "__main__":
-    # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/sign_demo_1.avi")
+    # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.avi")
     # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
     RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")
