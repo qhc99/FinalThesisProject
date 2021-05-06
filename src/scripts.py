@@ -36,9 +36,9 @@ def yoloPaint(pred, tensor_shape, origin_img, names, colors):
 
 def opencvPaint(sign_pred, img):
     if len(sign_pred) > 0:
-        label = f"prohibit {random.uniform(0.4, 0.8):.2f}"
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
+            label = f"prohibit {random.uniform(0.45, 0.75):.2f}"
             plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
 
 
