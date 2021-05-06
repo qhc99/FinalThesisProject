@@ -95,6 +95,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), SOURCE_PATH)
         img_names_list = os.listdir(imgs_folder_path)
+        # noinspection PyGlobalUndefined
+        global INTRESTED_CLASSES
+        INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7}
 
         for img_name in img_names_list:
             img_path = os.path.join(imgs_folder_path, img_name)
@@ -190,6 +193,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.avi")
-    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
+    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
     RunModels(SOURCE=ImgsSource.CAMERA)
-    print("success")
+    # print("success")
