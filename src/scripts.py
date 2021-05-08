@@ -19,7 +19,7 @@ cudnn.benchmark = True
 
 
 # tensor_img[2:]
-def yoloPaint(pred, tensor_shape, origin_img, names, colors):
+def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=INTRESTED_CLASSES):
     # Process detections
     for i, det in enumerate(pred):  # detections per image
         s, im0 = '', origin_img
@@ -29,12 +29,13 @@ def yoloPaint(pred, tensor_shape, origin_img, names, colors):
             det[:, :4] = scale_coords(tensor_shape, det[:, :4], im0.shape).round()
             # Write results
             for (*xyxy, conf, cls) in reversed(det):
-                if int(cls.item()) in INTRESTED_CLASSES:
+                if int(cls.item()) in interested_class:
                     label = f'{names[int(cls)]} {conf:.2f}'
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
 
 
 def opencvPaint(sign_pred, img):
+    random.seed(10)
     if len(sign_pred) > 0:
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
@@ -95,9 +96,6 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), SOURCE_PATH)
         img_names_list = os.listdir(imgs_folder_path)
-        # noinspection PyGlobalUndefined
-        global INTRESTED_CLASSES
-        INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7}
 
         for img_name in img_names_list:
             img_path = os.path.join(imgs_folder_path, img_name)
@@ -109,7 +107,8 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
             traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
             traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
-            yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
+            yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR,
+                      interested_class={0, 1, 2, 3, 5, 7})
 
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)

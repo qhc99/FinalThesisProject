@@ -58,4 +58,17 @@ def checkCCTSDB():
 
 
 if __name__ == "__main__":
+    img = cv2.imread("../header.png", cv2.IMREAD_COLOR)
+    cv2.imshow("origin", img)
+    w, h, _ = img.shape
+    for i in range(w):
+        for j in range(h):
+            pixel = img[i, j]
+            if (max(pixel[0], pixel[1]) - min(pixel[0], pixel[1]) < 20) and \
+                    (max(pixel[1], pixel[2]) - min(pixel[1], pixel[2]) < 20):
+                img[i, j] = [255, 255, 255]
+    cv2.imshow("img", img)
+    cv2.imwrite("header.png", img)
+
+    cv2.waitKey()
     print("success")
