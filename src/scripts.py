@@ -70,7 +70,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            tensor_img = img_transform(img_resize(cv2_img, 480), GPU_DEVICE)
             traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
             traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
@@ -130,7 +130,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            tensor_img = img_transform(img_resize(cv2_img, 480), GPU_DEVICE)
             traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
             traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
@@ -157,16 +157,16 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
         raise Exception("unknown img source")
 
 
-def trafficPredict(in_queue: Queue, out_queue: Queue):
-    while True:
-        img = in_queue.get(True)
-        img = pil_to_cv2(img)
-        tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
-        yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
-        yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
-        for i, data in enumerate(yolo_pred):
-            yolo_pred[i] = data.cpu().detach()
-        out_queue.put((yolo_pred, tensorShape(tensor_img)), True)
+# def trafficPredict(in_queue: Queue, out_queue: Queue):
+#     while True:
+#         img = in_queue.get(True)
+#         img = pil_to_cv2(img)
+#         tensor_img = img_transform(img_resize(img, 640), GPU_DEVICE)
+#         yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
+#         yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
+#         for i, data in enumerate(yolo_pred):
+#             yolo_pred[i] = data.cpu().detach()
+#         out_queue.put((yolo_pred, tensorShape(tensor_img)), True)
 
 
 def signPredict(in_queue: Queue, out_queue: Queue):
@@ -192,6 +192,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.avi")
-    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
+    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
     RunModels(SOURCE=ImgsSource.CAMERA)
     # print("success")

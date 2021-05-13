@@ -1,3 +1,5 @@
+import matplotlib
+import numpy as np
 from skimage import io
 from PIL import Image
 import cv2
@@ -5,6 +7,9 @@ import os
 from multiprocessing import Pool
 from matplotlib import image as mt_image
 from shutil import copyfile
+import tkinter as tk
+from tkinter import filedialog
+import matplotlib.pyplot as plt
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 
@@ -57,18 +62,46 @@ def checkCCTSDB():
     main_folder_path = "G:\\download\\CCTSDB-master\\img"
 
 
-if __name__ == "__main__":
-    img = cv2.imread("../header.png", cv2.IMREAD_COLOR)
+def getPath():
+    root = tk.Tk()
+    root.withdraw()
+    return filedialog.askopenfilename()
+
+
+def whiteBG(name, diff=5):
+    img = cv2.imread(getPath(), cv2.IMREAD_COLOR)
     cv2.imshow("origin", img)
     w, h, _ = img.shape
     for i in range(w):
         for j in range(h):
             pixel = img[i, j]
-            if (max(pixel[0], pixel[1]) - min(pixel[0], pixel[1]) < 20) and \
-                    (max(pixel[1], pixel[2]) - min(pixel[1], pixel[2]) < 20):
+            if max(pixel[0], pixel[1], pixel[2]) > 240 and \
+                    max(pixel[0], pixel[1]) - min(pixel[0], pixel[1]) < diff and \
+                    (max(pixel[1], pixel[2]) - min(pixel[1], pixel[2]) < diff):
                 img[i, j] = [255, 255, 255]
     cv2.imshow("img", img)
-    cv2.imwrite("header.png", img)
-
     cv2.waitKey()
+    cv2.imwrite(name, img)
+
+
+def plotLine(x, y, xlabel="", ylabel="", title=""):
+    matplotlib.rcParams['font.sans-serif'] = ['SimHei']
+    plt.plot(x, y, "bo")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.show()
+
+
+def cutImg():
+    file_path = "./resources/info.dat"
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        for line in lines:
+            items = line[:-1].split(" ")
+            print(items)
+
+
+if __name__ == "__main__":
+    cutImg()
     print("success")
