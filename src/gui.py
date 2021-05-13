@@ -27,10 +27,10 @@ class TrafficSystemGUI(QWidget):
         self.threadPool = QThreadPool()
 
     def initMainWindow(self):
-        self.__height = 963
-        self.__width = 1894
-        self.__top = 45
-        self.__left = 20
+        self.__height = 898
+        self.__width = 1536
+        self.__top = int(1080/2 - self.__height/2)
+        self.__left = int(1920/2 - self.__width/2)
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
@@ -39,8 +39,8 @@ class TrafficSystemGUI(QWidget):
         self.setWindowIcon(QIcon("resources/hohai.png"))
 
     def initImageGroup(self):
-        self.ImageBox = QGraphicsView(self)
-        self.ImageBox.setGeometry(QRect(10, 10, 1521, 941))
+        self.ImageBackGround = QGraphicsView(self)
+        self.ImageBackGround.setGeometry(QRect(10, 10, 1152, 854))
 
         self.ImageScreen = QLabel(self)
         rect = QRect(10, 10, 200, 200)
@@ -55,7 +55,7 @@ class TrafficSystemGUI(QWidget):
     # noinspection PyArgumentList,PyUnresolvedReferences
     def initButtons(self):
         self.VideoButtion = QPushButton(self)
-        self.VideoButtion.setGeometry(QRect(1580, 630, 241, 101))
+        self.VideoButtion.setGeometry(QRect(1180, 640, 241, 101))
         self.VideoButtion.setText("视频:off")
         self.VideoButtion.clicked.connect(self.clickVideoButton)
 
@@ -65,7 +65,7 @@ class TrafficSystemGUI(QWidget):
         self.VideoButtion.setFont(font)
 
         self.CameraButton = QPushButton(self)
-        self.CameraButton.setGeometry(QRect(1580, 850, 241, 101))
+        self.CameraButton.setGeometry(QRect(1180, 770, 241, 101))
         self.CameraButton.setText("摄像头:off")
         self.CameraButton.clicked.connect(self.clickCameraButton)
         self.CameraButton.setFont(font)
@@ -74,7 +74,7 @@ class TrafficSystemGUI(QWidget):
 
     def initReadMe(self):
         self.ReadMeLabel = QLabel(self)
-        self.ReadMeLabel.setGeometry(QRect(1540, 270, 351, 131))
+        self.ReadMeLabel.setGeometry(QRect(1180, 490, 351, 131))
         font = QFont()
         font.setFamily("黑体")
         font.setPointSize(14)
@@ -124,7 +124,7 @@ class TrafficSystemGUI(QWidget):
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            tensor_img = img_transform(img_resize(cv2_img, 480), GPU_DEVICE)
             yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
             yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(yolo_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
@@ -181,7 +181,7 @@ class TrafficSystemGUI(QWidget):
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+            tensor_img = img_transform(img_resize(cv2_img, 480), GPU_DEVICE)
             yolo_pred = TRAFFIC_MODEL(tensor_img)[0]
             yolo_pred = non_max_suppression(yolo_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(yolo_pred, tensor_img.shape[2:], cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)

@@ -99,7 +99,23 @@ def cutImg():
         lines = file.readlines()
         for line in lines:
             items = line[:-1].split(" ")
-            print(items)
+            img_name = items[0]
+            boxes = items[2:]
+            boxes_count = int(items[1])
+            img = cv2.imread(os.path.join("./resources/img", img_name), cv2.IMREAD_COLOR)
+            for b_idx in range(0, boxes_count):
+                x = int(boxes[b_idx * 4])
+                y = int(boxes[b_idx * 4 + 1])
+                w = int(boxes[b_idx * 4 + 2])
+                h = int(boxes[b_idx * 4 + 3])
+                target = img[y:y + h+2, x:x + w+2]
+                try:
+                    cv2.imshow("cut", target)
+                except cv2.error:
+                    print(img.shape)
+                    print(img_name, x, y, w, h)
+                    raise Exception
+                cv2.waitKey()
 
 
 if __name__ == "__main__":

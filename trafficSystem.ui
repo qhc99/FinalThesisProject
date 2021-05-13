@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1894</width>
-    <height>963</height>
+    <width>1536</width>
+    <height>898</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -25,8 +25,8 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>1521</width>
-      <height>941</height>
+      <width>1152</width>
+      <height>864</height>
      </rect>
     </property>
     <property name="autoFillBackground">
@@ -79,8 +79,8 @@
    <widget class="QPushButton" name="VideoButtion">
     <property name="geometry">
      <rect>
-      <x>1580</x>
-      <y>630</y>
+      <x>1180</x>
+      <y>640</y>
       <width>241</width>
       <height>101</height>
      </rect>
@@ -98,8 +98,8 @@
    <widget class="QPushButton" name="CameraButton">
     <property name="geometry">
      <rect>
-      <x>1580</x>
-      <y>850</y>
+      <x>1180</x>
+      <y>770</y>
       <width>241</width>
       <height>101</height>
      </rect>
@@ -117,8 +117,8 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>1540</x>
-      <y>270</y>
+      <x>1180</x>
+      <y>490</y>
       <width>351</width>
       <height>131</height>
      </rect>
