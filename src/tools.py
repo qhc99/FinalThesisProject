@@ -1,3 +1,6 @@
+import math
+import random
+
 import matplotlib
 import numpy as np
 from skimage import io
@@ -93,31 +96,62 @@ def plotLine(x, y, xlabel="", ylabel="", title=""):
     plt.show()
 
 
-def cutImg():
-    file_path = "./resources/info.dat"
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-        for line in lines:
-            items = line[:-1].split(" ")
-            img_name = items[0]
-            boxes = items[2:]
-            boxes_count = int(items[1])
-            img = cv2.imread(os.path.join("./resources/img", img_name), cv2.IMREAD_COLOR)
-            for b_idx in range(0, boxes_count):
-                x = int(boxes[b_idx * 4])
-                y = int(boxes[b_idx * 4 + 1])
-                w = int(boxes[b_idx * 4 + 2])
-                h = int(boxes[b_idx * 4 + 3])
-                target = img[y:y + h+2, x:x + w+2]
-                try:
-                    cv2.imshow("cut", target)
-                except cv2.error:
-                    print(img.shape)
-                    print(img_name, x, y, w, h)
-                    raise Exception
-                cv2.waitKey()
+def rotate3d(img, rx, ry, rz, f=1000, dx=0, dy=0, dz=1000):
+    w, h = img.shape[0], img.shape[1]
+    alpha = rx * math.pi / 180.
+    beta = ry * math.pi / 180.
+    gamma = rz * math.pi / 180.
+
+    RX = np.array([
+        [1, 0, 0, 0],
+        [0, np.cos(alpha), -np.sin(alpha), 0],
+        [0, np.sin(alpha), np.cos(alpha), 0],
+        [0, 0, 0, 1]])
+    RY = np.array([
+        [np.cos(beta), 0, -np.sin(beta), 0],
+        [0, 1, 0, 0],
+        [np.sin(beta), 0, np.cos(beta), 0],
+        [0, 0, 0, 1]])
+    RZ = np.array([
+        [np.cos(gamma), -np.sin(gamma), 0, 0],
+        [np.sin(gamma), np.cos(gamma), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]])
+    A1 = np.array([
+        [1, 0, -w / 2],
+        [0, 1, -h / 2],
+        [0, 0, 0],
+        [0, 0, 1]])
+    R = np.matmul(np.matmul(RX, RY), RZ)
+    T = np.array([
+        [1, 0, 0, dx],
+        [0, 1, 0, dy],
+        [0, 0, 1, dz],
+        [0, 0, 0, 1]])
+    A2 = np.array([
+        [f, 0, w / 2, 0],
+        [0, f, h / 2, 0],
+        [0, 0, 1, 0]])
+
+    trans = np.matmul(A2, np.matmul(T, np.matmul(R, A1)))
+    out = img.copy()
+    cv2.warpPerspective(src=img, M=trans, dsize=img.shape[:2], dst=out, flags=cv2.INTER_LANCZOS4)
+    return out
+
+
+def augmentation():
+    d = "./resources/cutted_img"
+    img_names = os.listdir(d)
+
+    for img_name in img_names:
+        img = cv2.imread(os.path.join(d, img_name), cv2.IMREAD_COLOR)
+        for n in range(0, 10):
+            out = rotate3d(img, 0, 30, 0)
+            cv2.imshow("orgin", img)
+            cv2.imshow("out", out)
+            cv2.waitKey()
 
 
 if __name__ == "__main__":
-    cutImg()
+    augmentation()
     print("success")
