@@ -8,6 +8,7 @@ from PIL import Image
 import cv2
 import os
 from multiprocessing import Pool
+from multiprocessing import pool
 from matplotlib import image as mt_image
 from shutil import copyfile
 import tkinter as tk
@@ -96,7 +97,7 @@ def plotLine(x, y, xlabel="", ylabel="", title=""):
     plt.show()
 
 
-def rotate3d(img, rx, ry, rz, f=1000, dx=0, dy=0, dz=1000):
+def rotate3d(img, rx, ry, rz, f=2000, dx=0, dy=0, dz=2000):
     w, h = img.shape[0], img.shape[1]
     alpha = rx * math.pi / 180.
     beta = ry * math.pi / 180.
@@ -142,16 +143,49 @@ def rotate3d(img, rx, ry, rz, f=1000, dx=0, dy=0, dz=1000):
 def augmentation():
     d = "./resources/cutted_img"
     img_names = os.listdir(d)
+    with pool.Pool() as p:
+        p.map(func=processImg, iterable=img_names)
 
-    for img_name in img_names:
-        img = cv2.imread(os.path.join(d, img_name), cv2.IMREAD_COLOR)
-        for n in range(0, 10):
-            out = rotate3d(img, 0, 30, 0)
-            cv2.imshow("orgin", img)
-            cv2.imshow("out", out)
-            cv2.waitKey()
+
+def processImg(img_name):
+    xy_angle = [i for i in range(-30, 32, 2)]
+    z_angle = [i for i in range(-20, 22, 2)]
+    d = "./resources/cutted_img"
+    img = cv2.imread(os.path.join(d, img_name), cv2.IMREAD_COLOR)
+    img = cv2.copyMakeBorder(img, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+    for n in range(0, 30):
+        out = rotate3d(img, random.sample(xy_angle, 1)[0], random.sample(xy_angle, 1)[0],
+                       random.sample(z_angle, 1)[0])
+        out = removeBorder(out)
+        out = cv2.copyMakeBorder(out, 0, 10, 0, 10, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        cv2.imwrite(os.path.join("./resources/augment", str(n) + img_name), out)
+    print(img_name)
+
+
+def removeBorder(out):
+    idx = np.argwhere(np.all(out[..., :] == 0, axis=0))
+    out = np.delete(out, idx, axis=1)
+
+    idx = np.argwhere(np.all(out[:, ...] == 0, axis=1))
+    out = np.delete(out, idx, axis=0)
+
+    return out
+
+
+def writeInfoDat():
+    with open("info.dat", "w+") as file:
+        names = os.listdir("./resources/augment")
+        with pool.Pool() as p:
+            data = p.map(_processImageData, names)
+        file.writelines(data)
+
+
+def _processImageData(name):
+    img = cv2.imread(os.path.join("./resources/augment", name))
+    print(name)
+    return "./img\\" + name + f" 1 0 0 {img.shape[1]-10} {img.shape[0]-10}\n"
 
 
 if __name__ == "__main__":
-    augmentation()
+    writeInfoDat()
     print("success")
