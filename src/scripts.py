@@ -13,12 +13,12 @@ from predict import img_resize, img_transform
 from utils.general import non_max_suppression
 from utils.plots import plot_one_box
 from utils.general import scale_coords
-from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES,\
-    INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT, POS_IMGS_FOLDER_PATH
+from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES, \
+    INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT
+
 cudnn.benchmark = True
 
 
-# tensor_img[2:]
 def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=INTRESTED_CLASSES):
     # Process detections
     for i, det in enumerate(pred):  # detections per image
@@ -191,7 +191,7 @@ def tensorShape(tensor_img):
 
 
 if __name__ == "__main__":
-    # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.avi")
-    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH=POS_IMGS_FOLDER_PATH)
-    RunModels(SOURCE=ImgsSource.CAMERA)
-    # print("success")
+    RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.avi")
+    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\origin")
+    # RunModels(SOURCE=ImgsSource.CAMERA)
+    print("success")

@@ -4,7 +4,6 @@ import cv2
 
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
-POS_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/pos_imgs/img"
 
 CONFI_THRES = 0.25
 IOU_THRES = 0.45
@@ -16,12 +15,8 @@ MODEL_NUM = "1"
 
 # 1: 381
 OVERTRAINED_SIGN_MODEL_PATH = "./parameters/trained/lbp_overtrained_no_break.xml"
-LBP_33000 = "./parameters/trained/lbp_24_33000_break.xml"
-LBP_EXP = "./parameters/trained/lbp_fix_pos_12000.xml"
-LBP_TEST = "./parameters/trained/test.xml"
+LBP = "./parameters/trained/lbp.xml"
 
-YOLOV5L_PATH = "./parameters/original/yolov5l.pt"
-YOLOV5M_PATH = "./parameters/original/yolov5m.pt"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
 GPU_DEVICE = select_device('')
@@ -43,5 +38,5 @@ for _cls in INTRESTED_CLASSES:
     else:
         TRAFFIC_COLOR[_cls] = [0, 0, 255]   # cars red
 
-SIGN_CLASSIFIER = cv2.CascadeClassifier()
-SIGN_CLASSIFIER.load(OVERTRAINED_SIGN_MODEL_PATH)
+SIGN_CLASSIFIER = cv2.CascadeClassifier(LBP)
+# SIGN_CLASSIFIER.load(LBP)

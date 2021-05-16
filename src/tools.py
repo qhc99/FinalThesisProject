@@ -35,7 +35,7 @@ def findBroken(image_path: str):
         return False
 
 
-def process(img_name: str):
+def _process(img_name: str):
     img_path = os.path.join(NEG_IMGS_FOLDER_PATH, img_name)
     findBroken(img_path)
 
@@ -44,7 +44,7 @@ def printBrokenImages():
     img_names = os.listdir(NEG_IMGS_FOLDER_PATH)
     with Pool() as pool:
         try:
-            pool.map(process, img_names)
+            pool.map(_process, img_names)
         except Exception as e:
             print(e)
 
@@ -59,11 +59,6 @@ def copy(name):
     src_dir = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
     dst_dir = "../../yolo_sign_dataset/images/train"
     copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
-
-
-def checkCCTSDB():
-    truth_path = "G:\\download\\CCTSDB-master\\GroundTruth\\groundtruth0000-9999.txt"
-    main_folder_path = "G:\\download\\CCTSDB-master\\img"
 
 
 def getPath():
@@ -102,7 +97,6 @@ def rotate3d(img, rx, ry, rz, f=2000, dx=0, dy=0, dz=2000):
     alpha = rx * math.pi / 180.
     beta = ry * math.pi / 180.
     gamma = rz * math.pi / 180.
-
     RX = np.array([
         [1, 0, 0, 0],
         [0, np.cos(alpha), -np.sin(alpha), 0],
@@ -133,7 +127,6 @@ def rotate3d(img, rx, ry, rz, f=2000, dx=0, dy=0, dz=2000):
         [f, 0, w / 2, 0],
         [0, f, h / 2, 0],
         [0, 0, 1, 0]])
-
     trans = np.matmul(A2, np.matmul(T, np.matmul(R, A1)))
     out = img.copy()
     cv2.warpPerspective(src=img, M=trans, dsize=img.shape[:2], dst=out, flags=cv2.INTER_LANCZOS4)
@@ -141,51 +134,121 @@ def rotate3d(img, rx, ry, rz, f=2000, dx=0, dy=0, dz=2000):
 
 
 def augmentation():
-    d = "./resources/cutted_img"
+    d = "D:\\cutted_img"
     img_names = os.listdir(d)
-    with pool.Pool() as p:
-        p.map(func=processImg, iterable=img_names)
+    with pool.Pool(8) as p:
+        p.map(func=augImg, iterable=img_names)
 
 
-def processImg(img_name):
+background_img_names = os.listdir("D:\\COCO_COCO_2014_Train_Images\\train2014")
+
+
+def augImg(img_name):
+    global background_img_names
     xy_angle = [i for i in range(-30, 32, 2)]
     z_angle = [i for i in range(-20, 22, 2)]
-    d = "./resources/cutted_img"
-    img = cv2.imread(os.path.join(d, img_name), cv2.IMREAD_COLOR)
+    cutted_img_folder = "D:\\cutted_img"
+    img = cv2.imread(os.path.join(cutted_img_folder, img_name), cv2.IMREAD_COLOR)
     img = cv2.copyMakeBorder(img, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-    for n in range(0, 30):
+    for n in range(0, 10):
         out = rotate3d(img, random.sample(xy_angle, 1)[0], random.sample(xy_angle, 1)[0],
                        random.sample(z_angle, 1)[0])
         out = removeBorder(out)
-        out = cv2.copyMakeBorder(out, 0, 10, 0, 10, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-        cv2.imwrite(os.path.join("./resources/augment", str(n) + img_name), out)
+        out = cv2.copyMakeBorder(out, 0, 3, 0, 3, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+        out = adjustBrightAndContrast(out)
+        cv2.imwrite(os.path.join("D:\\TrafficBlockSign\\pos_imgs\\img", str(n) + img_name), out)
     print(img_name)
 
 
+c = [i for i in range(-30, 30, 5)]
+b = [i for i in range(-30, 30, 5)]
+
+
+def adjustBrightAndContrast(img):
+    img = np.int16(img)
+    contrast = random.sample(c, 1)[0]
+    bright = random.sample(b, 1)[0]
+    img = img * (contrast / 127 + 1) - contrast + bright
+    img = np.clip(img, 0, 255)
+    return np.uint8(img)
+
+
 def removeBorder(out):
-    idx = np.argwhere(np.all(out[..., :] == 0, axis=0))
+    idx = np.argwhere(np.all(out[..., :] <= 10, axis=0))
     out = np.delete(out, idx, axis=1)
 
-    idx = np.argwhere(np.all(out[:, ...] == 0, axis=1))
+    idx = np.argwhere(np.all(out[:, ...] <= 10, axis=1))
     out = np.delete(out, idx, axis=0)
 
     return out
 
 
 def writeInfoDat():
-    with open("info.dat", "w+") as file:
-        names = os.listdir("./resources/augment")
+    with open("D:\\TrafficBlockSign\\pos_imgs\\info.dat", "w") as file:
+        names = os.listdir("D:\\TrafficBlockSign\\pos_imgs\\img")
         with pool.Pool() as p:
-            data = p.map(_processImageData, names)
+            data = p.map(_getPosLabel, names)
         file.writelines(data)
 
 
-def _processImageData(name):
-    img = cv2.imread(os.path.join("./resources/augment", name))
+def _getPosLabel(name):
+    img = cv2.imread(os.path.join("D:\\TrafficBlockSign\\pos_imgs\\img", name))
     print(name)
-    return "./img\\" + name + f" 1 0 0 {img.shape[1]-10} {img.shape[0]-10}\n"
+    return "./img\\" + name + f" 1 0 0 {img.shape[1] - 3} {img.shape[0] - 3}\n"
+
+
+def removeAllFiles():
+    root = getPath()
+    paths = os.listdir(root)
+
+    def remove(name):
+        os.remove(os.path.join(root, name))
+
+    with pool.Pool() as p:
+        p.map(remove, paths)
+
+
+def removeCOCO():
+    file = getPath()
+    with open(file, "r") as f:
+        lines = f.readlines()
+    coco_root = "D:\\COCO_COCO_2014_Train_Images\\train2014"
+
+    def remove(name):
+        os.remove(os.path.join(coco_root, name))
+        print(os.path.join(coco_root, name))
+
+    for line in lines:
+        line = line[:-1]
+        remove(line)
+
+
+def stackImage():
+    p = "D:\\TrafficBlockSign\\pos_imgs\\img"
+    img_names = os.listdir(p)
+    sample_names = random.sample(img_names, 60)
+    sample_imgs = [cv2.imread(os.path.join(p, name), cv2.IMREAD_COLOR) for name in sample_names]
+    stack = np.ndarray([300, 500, 3], dtype=np.uint8)
+    for idx, img in enumerate(sample_imgs):
+        img = cv2.resize(img, (50, 50), interpolation=cv2.INTER_CUBIC)
+        row = idx // 10
+        col = idx % 10
+        stack[row * 50:(row + 1) * 50, col * 50:(col + 1) * 50] = img
+    cv2.imwrite("augment_stack.png", stack)
+    pass
+
+
+def removeAugment():
+    path = "D:\\TrafficBlockSign\\pos_imgs\\img"
+    names = os.listdir(path)
+
+    def remove(name):
+        os.remove(os.path.join(path, name))
+
+    with pool.ThreadPool() as p:
+        p.map(remove, names)
 
 
 if __name__ == "__main__":
-    writeInfoDat()
+    stackImage()
     print("success")
