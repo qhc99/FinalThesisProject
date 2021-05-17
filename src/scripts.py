@@ -1,5 +1,3 @@
-import random
-
 import cv2
 import time
 import os
@@ -29,17 +27,16 @@ def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=IN
             det[:, :4] = scale_coords(tensor_shape, det[:, :4], im0.shape).round()
             # Write results
             for (*xyxy, conf, cls) in reversed(det):
-                if int(cls.item()) in interested_class:
-                    label = f'{names[int(cls)]} {conf:.2f}'
+                if int(cls) in interested_class:
+                    label = f'{names[int(cls)]} {conf:.2f}' if int(cls) != 11 else f"{names[int(cls)]}"
                     plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
 
 
 def opencvPaint(sign_pred, img):
-    random.seed(10)
     if len(sign_pred) > 0:
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
-            label = f"prohibit {random.uniform(0.45, 0.75):.2f}"
+            label = "prohibit"
             plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
 
 

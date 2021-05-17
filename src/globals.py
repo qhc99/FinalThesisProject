@@ -15,7 +15,6 @@ MODEL_NUM = "1"
 
 # 1: 381
 OVERTRAINED_SIGN_MODEL_PATH = "./parameters/trained/lbp_overtrained_no_break.xml"
-LBP = "./parameters/trained/lbp.xml"
 
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
@@ -38,5 +37,4 @@ for _cls in INTRESTED_CLASSES:
     else:
         TRAFFIC_COLOR[_cls] = [0, 0, 255]   # cars red
 
-SIGN_CLASSIFIER = cv2.CascadeClassifier(LBP)
-# SIGN_CLASSIFIER.load(LBP)
+SIGN_CLASSIFIER = cv2.CascadeClassifier(OVERTRAINED_SIGN_MODEL_PATH)
