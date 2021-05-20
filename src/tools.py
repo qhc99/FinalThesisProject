@@ -42,9 +42,9 @@ def _process(img_name: str):
 
 def printBrokenImages():
     img_names = os.listdir(NEG_IMGS_FOLDER_PATH)
-    with Pool() as pool:
+    with Pool() as p:
         try:
-            pool.map(_process, img_names)
+            p.map(_process, img_names)
         except Exception as e:
             print(e)
 
@@ -85,7 +85,7 @@ def whiteBG(name, diff=5):
 
 def plotLine(x, y, xlabel="", ylabel="", title=""):
     matplotlib.rcParams['font.sans-serif'] = ['SimHei']
-    plt.plot(x, y, "bo")
+    plt.plot(x, y, "b-")
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
@@ -224,17 +224,17 @@ def removeCOCO():
 
 
 def stackImage():
-    p = "D:\\TrafficBlockSign\\pos_imgs\\img"
+    p = "D:\\cutted_img"
     img_names = os.listdir(p)
-    sample_names = random.sample(img_names, 60)
+    sample_names = random.sample(img_names, 15)
     sample_imgs = [cv2.imread(os.path.join(p, name), cv2.IMREAD_COLOR) for name in sample_names]
     stack = np.ndarray([300, 500, 3], dtype=np.uint8)
     for idx, img in enumerate(sample_imgs):
-        img = cv2.resize(img, (50, 50), interpolation=cv2.INTER_CUBIC)
-        row = idx // 10
-        col = idx % 10
-        stack[row * 50:(row + 1) * 50, col * 50:(col + 1) * 50] = img
-    cv2.imwrite("augment_stack.png", stack)
+        img = cv2.resize(img, (100, 100), interpolation=cv2.INTER_CUBIC)
+        row = idx // 5
+        col = idx % 5
+        stack[row * 100:(row + 1) * 100, col * 100:(col + 1) * 100] = img
+    cv2.imwrite("origin_stack.png", stack)
     pass
 
 
@@ -249,6 +249,29 @@ def removeAugment():
         p.map(remove, names)
 
 
+def signDataProcessing():
+    GoundTruthTxtPath = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\GroundTruth\\GroundTruth.txt"
+    img_foler = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\Images"
+    f = open(GoundTruthTxtPath, "r")
+    lines = f.readlines()
+    lines = [i[:-1] for i in lines if i.endswith("prohibitory\n")]  # prohibitory
+    f.close()
+    print(len(lines))
+    with pool.Pool() as p:
+        data = p.map(splitData, lines)
+    # random.shuffle(data)
+    for info in data:
+        img_name = info[0]
+        box = info[1:-1]
+        img = cv2.imread(os.path.join(img_foler, img_name), cv2.IMREAD_COLOR)
+        cv2.rectangle(img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), [0, 0, 255], thickness=3)
+        cv2.imshow("sign", img)
+        cv2.waitKey()
+
+
+def splitData(line):
+    return line.split(";")
+
+
 if __name__ == "__main__":
-    stackImage()
     print("success")

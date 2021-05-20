@@ -3,6 +3,8 @@ import time
 import os
 import numpy as np
 from enum import Enum
+
+import torch.cuda
 from PIL import Image
 import torch.backends.cudnn as cudnn
 from multiprocessing import Process, Queue
@@ -27,9 +29,10 @@ def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=IN
             det[:, :4] = scale_coords(tensor_shape, det[:, :4], im0.shape).round()
             # Write results
             for (*xyxy, conf, cls) in reversed(det):
-                if int(cls) in interested_class:
-                    label = f'{names[int(cls)]} {conf:.2f}' if int(cls) != 11 else f"{names[int(cls)]}"
-                    plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
+                cls = int(cls)
+                if cls in interested_class:
+                    label = f'{names[cls]} {conf:.2f}' if cls != 11 else f"{names[cls]}"
+                    plot_one_box(xyxy, im0, label=label, color=colors[cls], line_thickness=2)
 
 
 def opencvPaint(sign_pred, img):
@@ -67,7 +70,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 480), GPU_DEVICE)
+            tensor_img = img_transform(img_resize(cv2_img, 32*15), GPU_DEVICE)
             traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
             traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
@@ -75,8 +78,10 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            current_latency = (time.time() - last_time) * 1000
-            last_time = time.time()
+            torch.cuda.synchronize()
+            t = time.time()
+            current_latency = (t - last_time) * 1000
+            last_time = t
             cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
 
@@ -89,7 +94,6 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         sign_process.terminate()
-
     elif SOURCE == ImgsSource.FILE:
         imgs_folder_path = os.path.join(os.getcwd(), SOURCE_PATH)
         img_names_list = os.listdir(imgs_folder_path)
@@ -111,17 +115,27 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             opencvPaint(sign_pred, cv2_img)
 
             cv2.imshow('camera', cv2_img)
-            if cv2.waitKey(3000) & 0xFF == ord('q'):
-                break
+            while True:
+                key = cv2.waitKey()
+                if key == 13:
+                    break
+                if key == 99:
+                    cv2.imwrite(img_name, cv2_img)
+                    print("saved")
+                    break
+                print(key)
+            cv2.destroyWindow("camera")
         sign_process.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
+        count = 0
         cap = cv2.VideoCapture(SOURCE_PATH)
         window_show = False
         last_time = time.time()
 
         while cap.isOpened():
             read_succ, cv2_img = cap.read()
+            count += 1
             if not read_succ:
                 break
             pil_img = cv2_to_pil(cv2_img)
@@ -135,8 +149,10 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            current_latency = (time.time() - last_time) * 1000
-            last_time = time.time()
+            torch.cuda.synchronize()
+            t = time.time()
+            current_latency = (t - last_time) * 1000
+            last_time = t
             cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
                         cv2.LINE_4)
 
@@ -149,7 +165,6 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         sign_process.terminate()
-
     else:
         raise Exception("unknown img source")
 
@@ -171,7 +186,7 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         img = in_queue.get(True)
         img = pil_to_cv2(img)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 1)
+        sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 2)
         out_queue.put(sign_detect, True)
 
 
@@ -188,7 +203,7 @@ def tensorShape(tensor_img):
 
 
 if __name__ == "__main__":
-    RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.avi")
-    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\origin")
+    # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.mov")
+    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\origin")
     # RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")
