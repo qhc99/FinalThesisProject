@@ -14,6 +14,7 @@ from shutil import copyfile
 import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
+from utils.plots import plot_one_box
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 
@@ -250,22 +251,36 @@ def removeAugment():
 
 
 def signDataProcessing():
-    GoundTruthTxtPath = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\GroundTruth\\GroundTruth.txt"
-    img_foler = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\Images"
-    f = open(GoundTruthTxtPath, "r")
+    GroundTruthTxtPath = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\GroundTruth\\GroundTruth.txt"
+    img_folder = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\Images"
+    f = open(GroundTruthTxtPath, "r")
     lines = f.readlines()
     lines = [i[:-1] for i in lines if i.endswith("prohibitory\n")]  # prohibitory
     f.close()
-    print(len(lines))
     with pool.Pool() as p:
-        data = p.map(splitData, lines)
-    # random.shuffle(data)
-    for info in data:
+        formatted = p.map(splitData, lines)
+    ptr = formatted[0][:-1]
+    nested = [formatted[0][:-1]]
+    for info in formatted[1:]:
         img_name = info[0]
-        box = info[1:-1]
-        img = cv2.imread(os.path.join(img_foler, img_name), cv2.IMREAD_COLOR)
-        cv2.rectangle(img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), [0, 0, 255], thickness=3)
-        cv2.imshow("sign", img)
+        ptr_name = ptr[0]
+        if img_name == ptr_name:
+            box = info[1:-1]
+            nested[-1] = nested[-1] + box
+        else:
+            ptr = info
+            nested.append(info[:-1])
+
+    random.shuffle(nested)
+    for img_info in nested:
+        img_name = img_info[0]
+        boxes = img_info[1:]
+        img = cv2.imread(os.path.join(img_folder, img_name), cv2.IMREAD_COLOR)
+        for i in range(0, len(boxes) // 4):
+            cv2.rectangle(img, (int(round(float(boxes[i * 4]), 0)), int(round(float(boxes[i * 4 + 1]), 0))),
+                          (int(round(float(boxes[i * 4 + 2]), 0)), int(round(float(boxes[i * 4 + 3]), 0))),
+                          [0, 0, 255], thickness=3)
+        cv2.imshow("img", img)
         cv2.waitKey()
 
 
@@ -274,4 +289,5 @@ def splitData(line):
 
 
 if __name__ == "__main__":
+
     print("success")
