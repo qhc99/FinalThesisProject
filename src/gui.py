@@ -110,7 +110,7 @@ class TrafficSystemGUI(QWidget):
                                                        "All Files (*);;Python Files (*.py)", options=options)
             if len(file_path) > 0:
                 self.VideoButtion.setText(self.VideoButtion.text().replace("off", "on"))
-                self.threadPool.start(lambda: self.videoRunmodels(video_path=file_path))
+                self.threadPool.start(lambda: self.videoRunModels(video_path=file_path))
             else:
                 self.CameraButton.setEnabled(True)
         else:
@@ -122,8 +122,9 @@ class TrafficSystemGUI(QWidget):
         self.ImageScreen.clear()
         self.CameraButton.setEnabled(True)
 
+    # noinspection DuplicatedCode
     @pyqtSlot()
-    def videoRunmodels(self, video_path):
+    def videoRunModels(self, video_path):
         self.cap = cv2.VideoCapture(video_path)
 
         sign_in = Queue()
@@ -183,7 +184,7 @@ class TrafficSystemGUI(QWidget):
             self.ImageScreen.clear()
             self.VideoButtion.setEnabled(True)
 
-    # noinspection PyArgumentList
+    # noinspection PyArgumentList,DuplicatedCode
     @pyqtSlot()
     def cameraRunModels(self):
         self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
