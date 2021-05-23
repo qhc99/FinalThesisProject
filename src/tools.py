@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
 from utils.plots import plot_one_box
+from predict import img_resize
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 
@@ -138,16 +139,16 @@ def augmentation():
     d = "D:\\cutted_img"
     img_names = os.listdir(d)
     with pool.Pool(8) as p:
-        p.map(func=augImg, iterable=img_names)
+        p.map(func=_augImg, iterable=img_names)
 
 
-background_img_names = os.listdir("D:\\COCO_COCO_2014_Train_Images\\train2014")
+# background_img_names = os.listdir("D:\\COCO_COCO_2014_Train_Images\\train2014")
 
 
-def augImg(img_name):
+def _augImg(img_name):
     global background_img_names
-    xy_angle = [i for i in range(-30, 32, 2)]
-    z_angle = [i for i in range(-20, 22, 2)]
+    xy_angle = [i for i in range(-36, 38, 2)]
+    z_angle = [i for i in range(-24, 26, 2)]
     cutted_img_folder = "D:\\cutted_img"
     img = cv2.imread(os.path.join(cutted_img_folder, img_name), cv2.IMREAD_COLOR)
     img = cv2.copyMakeBorder(img, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=[0, 0, 0])
@@ -156,16 +157,16 @@ def augImg(img_name):
                        random.sample(z_angle, 1)[0])
         out = removeBorder(out)
         out = cv2.copyMakeBorder(out, 0, 3, 0, 3, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-        out = adjustBrightAndContrast(out)
+        out = _adjustBrightAndContrast(out)
         cv2.imwrite(os.path.join("D:\\TrafficBlockSign\\pos_imgs\\img", str(n) + img_name), out)
     print(img_name)
 
 
-c = [i for i in range(-30, 30, 5)]
-b = [i for i in range(-30, 30, 5)]
+c = [i for i in range(-35, 40, 5)]
+b = [i for i in range(-35, 40, 5)]
 
 
-def adjustBrightAndContrast(img):
+def _adjustBrightAndContrast(img):
     img = np.int16(img)
     contrast = random.sample(c, 1)[0]
     bright = random.sample(b, 1)[0]
@@ -288,6 +289,16 @@ def splitData(line):
     return line.split(";")
 
 
-if __name__ == "__main__":
+def padImg():
+    w = 232
+    img = cv2.imread("temp.png", cv2.IMREAD_COLOR)
+    print(img.shape)
+    left = int((w - img.shape[1]) / 2)
+    image = cv2.copyMakeBorder(img, 0, 0, left, w - left - img.shape[1], cv2.BORDER_CONSTANT, value=[255, 255, 255])
+    print(image.shape)
+    cv2.imwrite("folder_structure.png", image)
 
+
+if __name__ == "__main__":
+    padImg()
     print("success")

@@ -37,4 +37,4 @@ for _cls in INTRESTED_CLASSES:
     else:
         TRAFFIC_COLOR[_cls] = [0, 0, 255]   # cars red
 
-SIGN_CLASSIFIER = cv2.CascadeClassifier(OVERTRAINED_SIGN_MODEL_PATH)
+SIGN_CLASSIFIER = cv2.CascadeClassifier(CASCADE)

@@ -49,6 +49,7 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
+# noinspection DuplicatedCode
 def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (SOURCE_PATH is None):
         raise Exception("path is None")

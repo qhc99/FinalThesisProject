@@ -15,6 +15,7 @@ from multiprocessing import Queue, Process
 cudnn.benchmark = True
 
 
+# noinspection PyAttributeOutsideInit
 class TrafficSystemGUI(QWidget):
 
     # noinspection PyArgumentList
@@ -29,8 +30,8 @@ class TrafficSystemGUI(QWidget):
     def initMainWindow(self):
         self.__height = 898
         self.__width = 1536
-        self.__top = int(1080/2 - self.__height/2)
-        self.__left = int(1920/2 - self.__width/2)
+        self.__top = int(1080 / 2 - self.__height / 2)
+        self.__left = int(1920 / 2 - self.__width / 2)
         self.__title = "交通路况系统"
         self.setWindowTitle(self.__title)
         self.setGeometry(self.__left, self.__top, self.__width, self.__height)
@@ -51,6 +52,22 @@ class TrafficSystemGUI(QWidget):
         self.ImageScreenLeft = rect.left()
         self.ImageScreenWidth = rect.width()
         self.ImageScreenHeight = rect.height()
+
+    def imageBGMidPoint(self):
+        bg = self.ImageBackGround.geometry()
+        return bg.left() + int(bg.width() / 2), bg.top() + int(bg.height() / 2)
+
+    def imageMidPoint(self):
+        ig = self.ImageScreen.geometry()
+        return ig.left() + int(ig.width() / 2), ig.top() + int(ig.height() / 2)
+
+    def alignImage(self, img_mid: tuple, bg_mid: tuple):
+        w_diff = bg_mid[0] - img_mid[0]
+        h_diff = bg_mid[1] - img_mid[1]
+        self.ImageScreenTop += h_diff
+        self.ImageScreenLeft += w_diff
+        self.ImageScreen.setGeometry(
+            QRect(self.ImageScreenLeft, self.ImageScreenTop, self.ImageScreenWidth, self.ImageScreenHeight))
 
     # noinspection PyArgumentList,PyUnresolvedReferences
     def initButtons(self):
@@ -143,6 +160,11 @@ class TrafficSystemGUI(QWidget):
                 self.ImageScreenWidth = img.width()
                 self.ImageScreenHeight = img.height()
 
+            bg_mid = self.imageBGMidPoint()
+            img_mid = self.imageMidPoint()
+            if not (bg_mid == img_mid):
+                self.alignImage(img_mid, bg_mid)
+
             if self.VideoButtion.text().endswith("on"):
                 # noinspection PyArgumentList
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
@@ -200,6 +222,11 @@ class TrafficSystemGUI(QWidget):
                 self.ImageScreen.resize(img.width(), img.height())
                 self.ImageScreenWidth = img.width()
                 self.ImageScreenHeight = img.height()
+
+            bg_mid = self.imageBGMidPoint()
+            img_mid = self.imageMidPoint()
+            if not (bg_mid == img_mid):
+                self.alignImage(img_mid, bg_mid)
 
             if self.CameraButton.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
