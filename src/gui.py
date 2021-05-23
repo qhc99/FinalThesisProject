@@ -15,7 +15,7 @@ from multiprocessing import Queue, Process
 cudnn.benchmark = True
 
 
-# noinspection PyAttributeOutsideInit
+# noinspection PyAttributeOutsideInit,DuplicatedCode
 class TrafficSystemGUI(QWidget):
 
     # noinspection PyArgumentList
@@ -71,15 +71,15 @@ class TrafficSystemGUI(QWidget):
 
     # noinspection PyArgumentList,PyUnresolvedReferences
     def initButtons(self):
-        self.VideoButtion = QPushButton(self)
-        self.VideoButtion.setGeometry(QRect(1180, 640, 241, 101))
-        self.VideoButtion.setText("视频:off")
-        self.VideoButtion.clicked.connect(self.clickVideoButton)
+        self.VideoButton = QPushButton(self)
+        self.VideoButton.setGeometry(QRect(1180, 640, 241, 101))
+        self.VideoButton.setText("视频:off")
+        self.VideoButton.clicked.connect(self.clickVideoButton)
 
         font = QFont()
         font.setPointSize(24)
         font.setFamily("楷体")
-        self.VideoButtion.setFont(font)
+        self.VideoButton.setFont(font)
 
         self.CameraButton = QPushButton(self)
         self.CameraButton.setGeometry(QRect(1180, 770, 241, 101))
@@ -101,7 +101,7 @@ class TrafficSystemGUI(QWidget):
 
     @pyqtSlot()
     def clickVideoButton(self):
-        if self.VideoButtion.text().endswith("off"):
+        if self.VideoButton.text().endswith("off"):
             self.CameraButton.setEnabled(False)
             options = QFileDialog.Options()
             options |= QFileDialog.DontUseNativeDialog
@@ -109,20 +109,13 @@ class TrafficSystemGUI(QWidget):
             file_path, _ = QFileDialog.getOpenFileName(self, "选择视频文件", "",
                                                        "All Files (*);;Python Files (*.py)", options=options)
             if len(file_path) > 0:
-                self.VideoButtion.setText(self.VideoButtion.text().replace("off", "on"))
+                self.VideoButton.setText(self.VideoButton.text().replace("off", "on"))
                 self.threadPool.start(lambda: self.videoRunModels(video_path=file_path))
             else:
                 self.CameraButton.setEnabled(True)
         else:
-            self.resetVideo()
+            self.VideoButton.setText(self.VideoButton.text().replace("on", "off"))
 
-    def resetVideo(self):
-        self.VideoButtion.setText(self.VideoButtion.text().replace("on", "off"))
-        self.cap.release()
-        self.ImageScreen.clear()
-        self.CameraButton.setEnabled(True)
-
-    # noinspection DuplicatedCode
     @pyqtSlot()
     def videoRunModels(self, video_path):
         self.cap = cv2.VideoCapture(video_path)
@@ -166,23 +159,24 @@ class TrafficSystemGUI(QWidget):
             if not (bg_mid == img_mid):
                 self.alignImage(img_mid, bg_mid)
 
-            if self.VideoButtion.text().endswith("on"):
+            if self.VideoButton.text().endswith("on"):
                 # noinspection PyArgumentList
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
+            else:
+                break
+        self.ImageScreen.clear()
+        self.cap.release()
         sign_process.terminate()
-        self.resetVideo()
+        self.CameraButton.setEnabled(True)
 
     @pyqtSlot()
     def clickCameraButton(self):
         if self.CameraButton.text().endswith("off"):
-            self.VideoButtion.setEnabled(False)
+            self.VideoButton.setEnabled(False)
             self.CameraButton.setText(self.CameraButton.text().replace("off", "on"))
             self.threadPool.start(self.cameraRunModels)
         else:
             self.CameraButton.setText(self.CameraButton.text().replace("on", "off"))
-            self.cap.release()
-            self.ImageScreen.clear()
-            self.VideoButtion.setEnabled(True)
 
     # noinspection PyArgumentList,DuplicatedCode
     @pyqtSlot()
@@ -191,8 +185,8 @@ class TrafficSystemGUI(QWidget):
 
         sign_in = Queue()
         sign_out = Queue()
-        mp = Process(target=signPredict, args=(sign_in, sign_out))
-        mp.start()
+        sign_process = Process(target=signPredict, args=(sign_in, sign_out))
+        sign_process.start()
 
         last_time = time.time()
 
@@ -231,7 +225,12 @@ class TrafficSystemGUI(QWidget):
 
             if self.CameraButton.text().endswith("on"):
                 self.ImageScreen.setPixmap(QPixmap.fromImage(img))
-        mp.terminate()
+            else:
+                break
+        self.cap.release()
+        self.ImageScreen.clear()
+        sign_process.terminate()
+        self.VideoButton.setEnabled(True)
 
 
 if __name__ == '__main__':
