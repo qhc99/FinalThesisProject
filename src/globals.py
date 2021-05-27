@@ -14,8 +14,7 @@ FONT = cv2.FONT_HERSHEY_SIMPLEX
 MODEL_NUM = "1"
 
 # 1: 381
-OVERTRAINED_SIGN_MODEL_PATH = "./parameters/trained/lbp_overtrained_no_break.xml"
-CASCADE = "./parameters/trained/cascade.xml"
+CASCADE = "./parameters/trained/lbp"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
 GPU_DEVICE = select_device('')

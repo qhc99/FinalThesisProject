@@ -14,8 +14,6 @@ from shutil import copyfile
 import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
-from utils.plots import plot_one_box
-from predict import img_resize
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 
