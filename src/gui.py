@@ -3,6 +3,7 @@ from time import time
 
 from cv2 import VideoCapture, LINE_4, putText, CAP_DSHOW
 from torch.backends import cudnn
+from torch.cuda import synchronize
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -143,10 +144,11 @@ class TrafficSystemGUI(QWidget):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            current_latency = (time() - last_time) * 1000
-            last_time = time()
-            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
-                        LINE_4)
+            synchronize()
+            t = time()
+            current_latency = (t - last_time) * 1000
+            last_time = t
+            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1, LINE_4)
 
             img = QImage(cv2_img.data, cv2_img.shape[1], cv2_img.shape[0], QImage.Format_RGB888).rgbSwapped()
             if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
@@ -191,8 +193,8 @@ class TrafficSystemGUI(QWidget):
         last_time = time()
 
         while self.cap.isOpened():
-            read_succ, cv2_img = self.cap.read()
-            if not read_succ:
+            read_success, cv2_img = self.cap.read()
+            if not read_success:
                 break
 
             pil_img = cv2_to_pil(cv2_img)
@@ -206,10 +208,11 @@ class TrafficSystemGUI(QWidget):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            current_latency = (time() - last_time) * 1000
-            last_time = time()
-            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
-                        LINE_4)
+            synchronize()
+            t = time()
+            current_latency = (t - last_time) * 1000
+            last_time = t
+            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1, LINE_4)
 
             img = QImage(cv2_img.data, cv2_img.shape[1], cv2_img.shape[0], QImage.Format_RGB888).rgbSwapped()
 
