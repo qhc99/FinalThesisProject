@@ -115,17 +115,11 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            cv2.imshow('camera', cv2_img)
-            while True:
-                key = cv2.waitKey()
-                if key == 13:
-                    break
-                if key == 99:
-                    cv2.imwrite(img_name, cv2_img)
-                    print("saved")
-                    break
-                print(key)
-            cv2.destroyWindow("camera")
+            cv2.namedWindow("file")
+            cv2.moveWindow('file', 300, 115)
+            cv2.imshow('file', cv2_img)
+            cv2.waitKey()
+            cv2.destroyWindow("file")
         sign_process.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
