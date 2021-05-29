@@ -201,6 +201,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.mov")
-    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\data")
-    # RunModels(SOURCE=ImgsSource.CAMERA)
+    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\data")
+    RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")
