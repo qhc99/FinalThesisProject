@@ -1,12 +1,14 @@
-import cv2
-import time
-import os
-import numpy as np
+from cv2 import VideoCapture, putText, LINE_4, namedWindow, imread, moveWindow, waitKey, destroyWindow, \
+    CAP_DSHOW, imshow, cvtColor, COLOR_BGR2RGB, COLOR_BGR2GRAY, COLOR_RGB2BGR
+from time import time
+from os import getcwd, listdir
+from os.path import join
+from numpy import array
 from enum import Enum
 
-import torch.cuda
-from PIL import Image
-import torch.backends.cudnn as cudnn
+from torch.cuda import synchronize
+from PIL.Image import fromarray
+from torch.backends import cudnn
 from multiprocessing import Process, Queue
 
 from predict import img_resize, img_transform
@@ -60,9 +62,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
     sign_process.start()
 
     if SOURCE == ImgsSource.CAMERA:
-        cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+        cap = VideoCapture(0 + CAP_DSHOW)
         windows_show = False
-        last_time = time.time()
+        last_time = time()
 
         while cap.isOpened():
             read_succ, cv2_img = cap.read()
@@ -71,7 +73,7 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 32*15), GPU_DEVICE)
+            tensor_img = img_transform(img_resize(cv2_img, 32 * 15), GPU_DEVICE)
             traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
             traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
             yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR)
@@ -79,29 +81,29 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            torch.cuda.synchronize()
-            t = time.time()
+            synchronize()
+            t = time()
             current_latency = (t - last_time) * 1000
             last_time = t
-            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
-                        cv2.LINE_4)
+            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+                    LINE_4)
 
             if not windows_show:
-                cv2.namedWindow("camera")
-                cv2.moveWindow('camera', 300, 115)
+                namedWindow("camera")
+                moveWindow('camera', 300, 115)
                 windows_show = True
 
-            cv2.imshow('camera', cv2_img)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            imshow('camera', cv2_img)
+            if waitKey(1) & 0xFF == ord('q'):
                 break
         sign_process.terminate()
     elif SOURCE == ImgsSource.FILE:
-        imgs_folder_path = os.path.join(os.getcwd(), SOURCE_PATH)
-        img_names_list = os.listdir(imgs_folder_path)
+        imgs_folder_path = join(getcwd(), SOURCE_PATH)
+        img_names_list = listdir(imgs_folder_path)
 
         for img_name in img_names_list:
-            img_path = os.path.join(imgs_folder_path, img_name)
-            cv2_img = cv2.imread(img_path)
+            img_path = join(imgs_folder_path, img_name)
+            cv2_img = imread(img_path)
 
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
@@ -115,18 +117,18 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            cv2.namedWindow("file")
-            cv2.moveWindow('file', 300, 115)
-            cv2.imshow('file', cv2_img)
-            cv2.waitKey()
-            cv2.destroyWindow("file")
+            namedWindow("file")
+            moveWindow('file', 300, 115)
+            imshow('file', cv2_img)
+            waitKey()
+            destroyWindow("file")
         sign_process.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
         count = 0
-        cap = cv2.VideoCapture(SOURCE_PATH)
+        cap = VideoCapture(SOURCE_PATH)
         window_show = False
-        last_time = time.time()
+        last_time = time()
 
         while cap.isOpened():
             read_succ, cv2_img = cap.read()
@@ -144,20 +146,20 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            torch.cuda.synchronize()
-            t = time.time()
+            synchronize()
+            t = time()
             current_latency = (t - last_time) * 1000
             last_time = t
-            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
-                        cv2.LINE_4)
+            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+                    LINE_4)
 
             if not window_show:
-                cv2.namedWindow("video")
-                cv2.moveWindow('video', 300, 115)
+                namedWindow("video")
+                moveWindow('video', 300, 115)
                 window_show = True
 
-            cv2.imshow('video', cv2_img)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            imshow('video', cv2_img)
+            if waitKey(1) & 0xFF == ord('q'):
                 break
         sign_process.terminate()
     else:
@@ -180,17 +182,17 @@ def signPredict(in_queue: Queue, out_queue: Queue):
     while True:
         img = in_queue.get(True)
         img = pil_to_cv2(img)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cvtColor(img, COLOR_BGR2GRAY)
         sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 2)
         out_queue.put(sign_detect, True)
 
 
 def cv2_to_pil(img):
-    return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    return fromarray(cvtColor(img, COLOR_BGR2RGB))
 
 
 def pil_to_cv2(img):
-    return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    return cvtColor(array(img), COLOR_RGB2BGR)
 
 
 def tensorShape(tensor_img):

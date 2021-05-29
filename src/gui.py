@@ -1,8 +1,8 @@
-import sys
-import time
+from sys import argv, exit
+from time import time
 
-import cv2
-import torch.backends.cudnn as cudnn
+from cv2 import VideoCapture, LINE_4, putText, CAP_DSHOW
+from torch.backends import cudnn
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -118,14 +118,14 @@ class TrafficSystemGUI(QWidget):
 
     @pyqtSlot()
     def videoRunModels(self, video_path):
-        self.cap = cv2.VideoCapture(video_path)
+        self.cap = VideoCapture(video_path)
 
         sign_in = Queue()
         sign_out = Queue()
         sign_process = Process(target=signPredict, args=(sign_in, sign_out))
         sign_process.start()
 
-        last_time = time.time()
+        last_time = time()
 
         while self.cap.isOpened():
             read_succ, cv2_img = self.cap.read()
@@ -143,10 +143,10 @@ class TrafficSystemGUI(QWidget):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            current_latency = (time.time() - last_time) * 1000
-            last_time = time.time()
-            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
-                        cv2.LINE_4)
+            current_latency = (time() - last_time) * 1000
+            last_time = time()
+            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+                        LINE_4)
 
             img = QImage(cv2_img.data, cv2_img.shape[1], cv2_img.shape[0], QImage.Format_RGB888).rgbSwapped()
             if not (img.width() == self.ImageScreenWidth and img.height() == self.ImageScreenHeight):
@@ -181,14 +181,14 @@ class TrafficSystemGUI(QWidget):
     # noinspection PyArgumentList,DuplicatedCode
     @pyqtSlot()
     def cameraRunModels(self):
-        self.cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+        self.cap = VideoCapture(0 + CAP_DSHOW)
 
         sign_in = Queue()
         sign_out = Queue()
         sign_process = Process(target=signPredict, args=(sign_in, sign_out))
         sign_process.start()
 
-        last_time = time.time()
+        last_time = time()
 
         while self.cap.isOpened():
             read_succ, cv2_img = self.cap.read()
@@ -206,10 +206,10 @@ class TrafficSystemGUI(QWidget):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            current_latency = (time.time() - last_time) * 1000
-            last_time = time.time()
-            cv2.putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
-                        cv2.LINE_4)
+            current_latency = (time() - last_time) * 1000
+            last_time = time()
+            putText(cv2_img, "FPS:%.1f" % (1000 / current_latency), (0, 15), FONT, 0.5, (255, 80, 80), 1,
+                        LINE_4)
 
             img = QImage(cv2_img.data, cv2_img.shape[1], cv2_img.shape[0], QImage.Format_RGB888).rgbSwapped()
 
@@ -234,7 +234,7 @@ class TrafficSystemGUI(QWidget):
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication(argv)
     ui = TrafficSystemGUI()
     ui.show()
-    sys.exit(app.exec_())
+    exit(app.exec_())

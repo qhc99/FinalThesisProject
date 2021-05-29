@@ -298,5 +298,4 @@ def padImg():
 
 
 if __name__ == "__main__":
-    padImg()
     print("success")
