@@ -67,8 +67,8 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
         last_time = time()
 
         while cap.isOpened():
-            read_succ, cv2_img = cap.read()
-            if not read_succ:
+            read_success, cv2_img = cap.read()
+            if not read_success:
                 break
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
@@ -131,9 +131,9 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
         last_time = time()
 
         while cap.isOpened():
-            read_succ, cv2_img = cap.read()
+            read_success, cv2_img = cap.read()
             count += 1
-            if not read_succ:
+            if not read_success:
                 break
             pil_img = cv2_to_pil(cv2_img)
             sign_in.put(pil_img, True)
@@ -201,6 +201,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.mov")
-    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\data")
-    RunModels(SOURCE=ImgsSource.CAMERA)
+    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\sign_pos")
+    # RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")
