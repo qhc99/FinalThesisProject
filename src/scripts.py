@@ -16,12 +16,12 @@ from utils.general import non_max_suppression
 from utils.plots import plot_one_box
 from utils.general import scale_coords
 from globals import TRAFFIC_MODEL, TRAFFIC_COLOR, TRAFFIC_NAMES, \
-    INTRESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT
+    INTERESTED_CLASSES, GPU_DEVICE, SIGN_CLASSIFIER, CONFI_THRES, IOU_THRES, FONT
 
 cudnn.benchmark = True
 
 
-def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=INTRESTED_CLASSES):
+def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=INTERESTED_CLASSES):
     # Process detections
     for i, det in enumerate(pred):  # detections per image
         s, im0 = '', origin_img

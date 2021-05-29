@@ -26,9 +26,9 @@ TRAFFIC_NAMES[11] = "prohibit"
 
 TRAFFIC_COLOR = get_colors(TRAFFIC_NAMES)
 
-INTRESTED_CLASSES = {0, 1, 2, 3, 5, 7, 11}
+INTERESTED_CLASSES = {0, 1, 2, 3, 5, 7, 11}  # 11
 # BGR
-for _cls in INTRESTED_CLASSES:
+for _cls in INTERESTED_CLASSES:
     if _cls == 0:
         TRAFFIC_COLOR[_cls] = [0, 255, 0]  # person green
     elif _cls == 11:
