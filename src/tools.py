@@ -117,7 +117,7 @@ def _augImg(img_name):
                 bg_img = np.zeros((pos_img.shape[0], pos_img.shape[1], 3), np.uint8)
                 bg_img += 255
             mask = cv2.imread(os.path.join(mask_img_folder, img_name), cv2.IMREAD_GRAYSCALE)
-            _, mask = cv2.threshold(mask, 250, 255, cv2.THRESH_BINARY)
+            _, mask = cv2.threshold(mask, 230, 255, cv2.THRESH_BINARY)
 
             aug_img = cv2.bitwise_and(pos_img, pos_img, mask=mask)
 
@@ -127,7 +127,7 @@ def _augImg(img_name):
             aug_img = rotate3d(aug_img, rotate_x, rotate_y, rotate_z)
 
             mask = rotate3d(mask, rotate_x, rotate_y, rotate_z)
-            _, mask_inv = cv2.threshold(mask, 250, 255, cv2.THRESH_BINARY_INV)
+            _, mask_inv = cv2.threshold(mask, 230, 255, cv2.THRESH_BINARY_INV)
 
             bg_img = cv2.bitwise_and(bg_img, bg_img, mask=mask_inv)
             aug_img += bg_img
