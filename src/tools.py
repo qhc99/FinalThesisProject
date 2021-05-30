@@ -96,7 +96,7 @@ def _augImg(img_name):
     bg_img_folder = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Train_Images\\train2014"
     bg_img_names = os.listdir(bg_img_folder)
     pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
-    for n in range(0, 500):
+    for n in range(0, 150):
         try:
             bg_img_name = random.sample(bg_img_names, 1)[0]
             rand = random.random()
@@ -117,7 +117,7 @@ def _augImg(img_name):
                 bg_img = np.zeros((pos_img.shape[0], pos_img.shape[1], 3), np.uint8)
                 bg_img += 255
             mask = cv2.imread(os.path.join(mask_img_folder, img_name), cv2.IMREAD_GRAYSCALE)
-            _, mask = cv2.threshold(mask, 220, 255, cv2.THRESH_BINARY)
+            _, mask = cv2.threshold(mask, 230, 255, cv2.THRESH_BINARY)
 
             aug_img = cv2.bitwise_and(pos_img, pos_img, mask=mask)
 
@@ -127,7 +127,7 @@ def _augImg(img_name):
             aug_img = rotate3d(aug_img, rotate_x, rotate_y, rotate_z)
 
             mask = rotate3d(mask, rotate_x, rotate_y, rotate_z)
-            _, mask_inv = cv2.threshold(mask, 220, 255, cv2.THRESH_BINARY_INV)
+            _, mask_inv = cv2.threshold(mask, 230, 255, cv2.THRESH_BINARY_INV)
 
             bg_img = cv2.bitwise_and(bg_img, bg_img, mask=mask_inv)
             aug_img += bg_img
@@ -138,8 +138,8 @@ def _augImg(img_name):
     print(img_name)
 
 
-c = [i for i in range(-40, 45, 5)]
-b = [i for i in range(-40, 45, 5)]
+c = [i for i in range(-50, 51, 1)]
+b = [i for i in range(-45, 46, 1)]
 
 
 def _adjustBrightAndContrast(img):
