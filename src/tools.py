@@ -3,56 +3,18 @@ import random
 
 import matplotlib
 import numpy as np
-from skimage import io
-from PIL import Image
 import cv2
 import os
-from multiprocessing import Pool
 from multiprocessing import pool
-from matplotlib import image as mt_image
 from shutil import copyfile
 import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
-
-
-def findBroken(image_path: str):
-    # noinspection PyBroadException
-    try:
-        io_img = io.imread(image_path)
-        img = cv2.imread(image_path)
-        with Image.open(image_path) as p_img:
-            if img is None:
-                print(image_path[image_path.rfind("\\") + 1:])
-            elif io_img is None:
-                print(image_path[image_path.rfind("\\") + 1:])
-            elif p_img is None:
-                print(image_path[image_path.rfind("\\") + 1:])
-    except Exception:
-        print(image_path[image_path.rfind("\\") + 1:])
-        return False
-
-
-def _process(img_name: str):
-    img_path = os.path.join(NEG_IMGS_FOLDER_PATH, img_name)
-    findBroken(img_path)
-
-
-def printBrokenImages():
-    img_names = os.listdir(NEG_IMGS_FOLDER_PATH)
-    with Pool() as p:
-        try:
-            p.map(_process, img_names)
-        except Exception as e:
-            print(e)
-
-
-def transform(img_path: str, output_path: str):
-    img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    ret_img = cv2.merge([img, img, img, img])
-    mt_image.imsave(fname=output_path, format="svg", arr=ret_img)
+TRAIN_POS_FOLDER = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\img"
+INFO_DAT_PATH = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\info.dat"
+BG_FILE = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\neg_imgs\\bg.txt"
 
 
 def copy(name):
@@ -67,22 +29,6 @@ def getPath():
     return filedialog.askopenfilename()
 
 
-def whiteBG(name, diff=5):
-    img = cv2.imread(getPath(), cv2.IMREAD_COLOR)
-    cv2.imshow("origin", img)
-    w, h, _ = img.shape
-    for i in range(w):
-        for j in range(h):
-            pixel = img[i, j]
-            if max(pixel[0], pixel[1], pixel[2]) > 240 and \
-                    max(pixel[0], pixel[1]) - min(pixel[0], pixel[1]) < diff and \
-                    (max(pixel[1], pixel[2]) - min(pixel[1], pixel[2]) < diff):
-                img[i, j] = [255, 255, 255]
-    cv2.imshow("img", img)
-    cv2.waitKey()
-    cv2.imwrite(name, img)
-
-
 def plotLine(x, y, xlabel="", ylabel="", title=""):
     matplotlib.rcParams['font.sans-serif'] = ['SimHei']
     plt.plot(x, y, "b-")
@@ -92,7 +38,7 @@ def plotLine(x, y, xlabel="", ylabel="", title=""):
     plt.show()
 
 
-def rotate3d(img, rx, ry, rz, f=2000, dx=0, dy=0, dz=2000):
+def rotate3d(img, rx, ry, rz, f=800, dx=0, dy=0, dz=800):
     w, h = img.shape[0], img.shape[1]
     alpha = rx * math.pi / 180.
     beta = ry * math.pi / 180.
@@ -134,34 +80,66 @@ def rotate3d(img, rx, ry, rz, f=2000, dx=0, dy=0, dz=2000):
 
 
 def augmentation():
-    d = "D:\\cutted_img"
+    d = "C:\\Users\\Nathan\\Documents\\dataset\\mask"
     img_names = os.listdir(d)
-    with pool.Pool(8) as p:
+    # for img_name in img_names:
+    #     _augImg(img_name)
+    with pool.Pool() as p:
         p.map(func=_augImg, iterable=img_names)
 
 
-# background_img_names = os.listdir("D:\\COCO_COCO_2014_Train_Images\\train2014")
-
-
 def _augImg(img_name):
-    global background_img_names
-    xy_angle = [i for i in range(-36, 38, 2)]
-    z_angle = [i for i in range(-24, 26, 2)]
-    cutted_img_folder = "D:\\cutted_img"
-    img = cv2.imread(os.path.join(cutted_img_folder, img_name), cv2.IMREAD_COLOR)
-    img = cv2.copyMakeBorder(img, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-    for n in range(0, 10):
-        out = rotate3d(img, random.sample(xy_angle, 1)[0], random.sample(xy_angle, 1)[0],
-                       random.sample(z_angle, 1)[0])
-        out = removeBorder(out)
-        out = cv2.copyMakeBorder(out, 0, 3, 0, 3, cv2.BORDER_CONSTANT, value=[0, 0, 0])
-        out = _adjustBrightAndContrast(out)
-        cv2.imwrite(os.path.join("D:\\TrafficBlockSign\\pos_imgs\\img", str(n) + img_name), out)
+    xy_angle = [i for i in range(-36, 37, 1)]
+    z_angle = [i for i in range(-12, 13, 1)]
+    mask_img_folder = "C:\\Users\\Nathan\\Documents\\dataset\\mask"
+    pos_img_folder = "C:\\Users\\Nathan\\Documents\\dataset\\cut_img"
+    bg_img_folder = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Train_Images\\train2014"
+    bg_img_names = os.listdir(bg_img_folder)
+    pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
+    for n in range(0, 500):
+        try:
+            bg_img_name = random.sample(bg_img_names, 1)[0]
+            rand = random.random()
+            third1 = 0.4
+            third2 = 0.8
+            if rand <= third1:
+                bg_img = cv2.imread(os.path.join(bg_img_folder, bg_img_name), cv2.IMREAD_COLOR)
+                while bg_img.shape[0] < pos_img.shape[0] and bg_img.shape[1] < pos_img.shape[1]:
+                    bg_img = cv2.resize(bg_img, (bg_img.shape[1] * 2, bg_img.shape[2] * 2), cv2.INTER_CUBIC)
+                cut_x = random.random()
+                cut_y = random.random()
+                x_start = int((bg_img.shape[1] - pos_img.shape[1]) * cut_x)
+                y_start = int((bg_img.shape[0] - pos_img.shape[0]) * cut_y)
+                bg_img = bg_img[y_start:y_start + pos_img.shape[0], x_start:x_start + pos_img.shape[1], :]
+            elif third1 < rand <= third2:
+                bg_img = np.zeros((pos_img.shape[0], pos_img.shape[1], 3), np.uint8)
+            else:
+                bg_img = np.zeros((pos_img.shape[0], pos_img.shape[1], 3), np.uint8)
+                bg_img += 255
+            mask = cv2.imread(os.path.join(mask_img_folder, img_name), cv2.IMREAD_GRAYSCALE)
+            _, mask = cv2.threshold(mask, 220, 255, cv2.THRESH_BINARY)
+
+            aug_img = cv2.bitwise_and(pos_img, pos_img, mask=mask)
+
+            rotate_x = random.sample(xy_angle, 1)[0]
+            rotate_y = random.sample(xy_angle, 1)[0]
+            rotate_z = random.sample(z_angle, 1)[0]
+            aug_img = rotate3d(aug_img, rotate_x, rotate_y, rotate_z)
+
+            mask = rotate3d(mask, rotate_x, rotate_y, rotate_z)
+            _, mask_inv = cv2.threshold(mask, 220, 255, cv2.THRESH_BINARY_INV)
+
+            bg_img = cv2.bitwise_and(bg_img, bg_img, mask=mask_inv)
+            aug_img += bg_img
+            aug_img = _adjustBrightAndContrast(aug_img)
+            cv2.imwrite(os.path.join(TRAIN_POS_FOLDER, f"{n}{img_name}"), aug_img)
+        except Exception:
+            pass
     print(img_name)
 
 
-c = [i for i in range(-35, 40, 5)]
-b = [i for i in range(-35, 40, 5)]
+c = [i for i in range(-40, 45, 5)]
+b = [i for i in range(-40, 45, 5)]
 
 
 def _adjustBrightAndContrast(img):
@@ -173,54 +151,18 @@ def _adjustBrightAndContrast(img):
     return np.uint8(img)
 
 
-def removeBorder(out):
-    idx = np.argwhere(np.all(out[..., :] <= 10, axis=0))
-    out = np.delete(out, idx, axis=1)
-
-    idx = np.argwhere(np.all(out[:, ...] <= 10, axis=1))
-    out = np.delete(out, idx, axis=0)
-
-    return out
-
-
 def writeInfoDat():
-    with open("D:\\TrafficBlockSign\\pos_imgs\\info.dat", "w") as file:
-        names = os.listdir("D:\\TrafficBlockSign\\pos_imgs\\img")
+    with open(INFO_DAT_PATH, "w") as file:
+        names = os.listdir(TRAIN_POS_FOLDER)
         with pool.Pool() as p:
             data = p.map(_getPosLabel, names)
         file.writelines(data)
 
 
 def _getPosLabel(name):
-    img = cv2.imread(os.path.join("D:\\TrafficBlockSign\\pos_imgs\\img", name))
+    img = cv2.imread(os.path.join(TRAIN_POS_FOLDER, name))
     print(name)
-    return "./img\\" + name + f" 1 0 0 {img.shape[1] - 3} {img.shape[0] - 3}\n"
-
-
-def removeAllFiles():
-    root = getPath()
-    paths = os.listdir(root)
-
-    def remove(name):
-        os.remove(os.path.join(root, name))
-
-    with pool.Pool() as p:
-        p.map(remove, paths)
-
-
-def removeCOCO():
-    file = getPath()
-    with open(file, "r") as f:
-        lines = f.readlines()
-    coco_root = "D:\\COCO_COCO_2014_Train_Images\\train2014"
-
-    def remove(name):
-        os.remove(os.path.join(coco_root, name))
-        print(os.path.join(coco_root, name))
-
-    for line in lines:
-        line = line[:-1]
-        remove(line)
+    return "./img\\" + name + f" 1 0 0 {img.shape[1] - 1} {img.shape[0] - 1}\n"
 
 
 def stackImage():
@@ -239,7 +181,7 @@ def stackImage():
 
 
 def removeAugment():
-    path = "D:\\TrafficBlockSign\\pos_imgs\\img"
+    path = TRAIN_POS_FOLDER
     names = os.listdir(path)
 
     def remove(name):
@@ -249,53 +191,47 @@ def removeAugment():
         p.map(remove, names)
 
 
-def signDataProcessing():
-    GroundTruthTxtPath = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\GroundTruth\\GroundTruth.txt"
-    img_folder = "D:\\CCTSDB (CSUST Chinese Traffic Sign Detection Benchmark)\\Images"
-    f = open(GroundTruthTxtPath, "r")
-    lines = f.readlines()
-    lines = [i[:-1] for i in lines if i.endswith("prohibitory\n")]  # prohibitory
-    f.close()
-    with pool.Pool() as p:
-        formatted = p.map(splitData, lines)
-    ptr = formatted[0][:-1]
-    nested = [formatted[0][:-1]]
-    for info in formatted[1:]:
-        img_name = info[0]
-        ptr_name = ptr[0]
-        if img_name == ptr_name:
-            box = info[1:-1]
-            nested[-1] = nested[-1] + box
-        else:
-            ptr = info
-            nested.append(info[:-1])
-
-    random.shuffle(nested)
-    for img_info in nested:
-        img_name = img_info[0]
-        boxes = img_info[1:]
-        img = cv2.imread(os.path.join(img_folder, img_name), cv2.IMREAD_COLOR)
-        for i in range(0, len(boxes) // 4):
-            cv2.rectangle(img, (int(round(float(boxes[i * 4]), 0)), int(round(float(boxes[i * 4 + 1]), 0))),
-                          (int(round(float(boxes[i * 4 + 2]), 0)), int(round(float(boxes[i * 4 + 3]), 0))),
-                          [0, 0, 255], thickness=3)
-        cv2.imshow("img", img)
-        cv2.waitKey()
+def removeCOCOSign():
+    with open("C:\\Users\\Nathan\\Libs\\val_id.txt") as ids:
+        lines = ids.readlines()
+        with pool.Pool() as p:
+            p.map(_removeName, lines)
 
 
-def splitData(line):
-    return line.split(";")
+def _removeName(name):
+    name = name[:-1]
+    directory = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Val_Images\\val2014"
+    os.remove(os.path.join(directory, name))
 
 
-def padImg():
-    w = 232
-    img = cv2.imread("temp.png", cv2.IMREAD_COLOR)
-    print(img.shape)
-    left = int((w - img.shape[1]) / 2)
-    image = cv2.copyMakeBorder(img, 0, 0, left, w - left - img.shape[1], cv2.BORDER_CONSTANT, value=[255, 255, 255])
-    print(image.shape)
-    cv2.imwrite("folder_structure.png", image)
+def writeBG():
+    p1 = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Train_Images\\train2014"
+    p2 = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Val_Images\\val2014"
+    l1 = os.listdir(p1)
+    l2 = os.listdir(p2)
+
+    bg = open(BG_FILE, "w")
+
+    def _writeBG1(name):
+        t = os.path.join(p1, name)
+        bg.write(t)
+        bg.write("\n")
+
+    def _writeBG2(name):
+        t = os.path.join(p2, name)
+        bg.write(t)
+        bg.write("\n")
+
+    with pool.ThreadPool() as p:
+        p.map(_writeBG1, l1)
+        p.map(_writeBG2, l2)
+
+    bg.close()
 
 
 if __name__ == "__main__":
+    # writeBG()
+    removeAugment()
+    augmentation()
+    writeInfoDat()
     print("success")
