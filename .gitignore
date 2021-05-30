@@ -19,7 +19,6 @@ outdated
 *.avi
 *.data
 *.json
-parameters/
 
 *.cfg
 !cfg/yolov3*.cfg

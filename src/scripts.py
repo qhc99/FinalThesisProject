@@ -39,6 +39,7 @@ def yoloPaint(pred, tensor_shape, origin_img, names, colors, interested_class=IN
 
 def opencvPaint(sign_pred, img):
     if len(sign_pred) > 0:
+        print(len(sign_pred), end=",")
         for (x, y, w, h) in sign_pred:
             xyxy = [x, y, x + w, y + h]
             label = "prohibit"
@@ -117,11 +118,11 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             sign_pred = sign_out.get(True)
             opencvPaint(sign_pred, cv2_img)
 
-            namedWindow("file")
-            moveWindow('file', 300, 115)
-            imshow('file', cv2_img)
-            waitKey()
-            destroyWindow("file")
+            # namedWindow("file")
+            # moveWindow('file', 300, 10)
+            # imshow('file', cv2_img)
+            # waitKey()
+            # destroyWindow("file")
         sign_process.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
@@ -201,6 +202,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.mov")
-    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\sign_pos")
+    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="D:\\sign_pos_test")
     # RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")

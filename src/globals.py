@@ -14,7 +14,7 @@ FONT = cv2.FONT_HERSHEY_SIMPLEX
 MODEL_NUM = "1"
 
 # 1: 381
-CASCADE = "./parameters/trained/lbp.xml"
+CASCADE = "./parameters/trained/better.xml"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
 GPU_DEVICE = select_device('')
@@ -26,7 +26,7 @@ TRAFFIC_NAMES[11] = "prohibit"
 
 TRAFFIC_COLOR = get_colors(TRAFFIC_NAMES)
 
-INTERESTED_CLASSES = {0, 1, 2, 3, 5, 7, 11}  # 11
+INTERESTED_CLASSES = {0, 1, 2, 3, 5, 7}  # 11
 # BGR
 for _cls in INTERESTED_CLASSES:
     if _cls == 0:
