@@ -52,8 +52,14 @@ class ImgsSource(Enum):
     VIDEO = 2
 
 
+class Target(Enum):
+    SIGN = 0
+    TRAFFIC = 1
+    ALL = 2
+
+
 # noinspection DuplicatedCode
-def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
+def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None, FILE_TARGET: Target = Target.ALL):
     if (SOURCE == ImgsSource.FILE or SOURCE == ImgsSource.VIDEO) and (SOURCE_PATH is None):
         raise Exception("path is None")
 
@@ -106,23 +112,26 @@ def RunModels(SOURCE=ImgsSource.CAMERA, SOURCE_PATH=None):
             img_path = join(imgs_folder_path, img_name)
             cv2_img = imread(img_path)
 
-            pil_img = cv2_to_pil(cv2_img)
-            sign_in.put(pil_img, True)
+            if FILE_TARGET.ALL | FILE_TARGET.SIGN:
+                pil_img = cv2_to_pil(cv2_img)
+                sign_in.put(pil_img, True)
 
-            tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
-            traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
-            traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
-            yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR,
-                      interested_class={0, 1, 2, 3, 5, 7})
+            if FILE_TARGET.ALL | FILE_TARGET.TRAFFIC:
+                tensor_img = img_transform(img_resize(cv2_img, 640), GPU_DEVICE)
+                traffic_pred = TRAFFIC_MODEL(tensor_img)[0]
+                traffic_pred = non_max_suppression(traffic_pred, CONFI_THRES, IOU_THRES)
+                yoloPaint(traffic_pred, tensorShape(tensor_img), cv2_img, TRAFFIC_NAMES, TRAFFIC_COLOR,
+                          interested_class={0, 1, 2, 3, 5, 7})
 
-            sign_pred = sign_out.get(True)
-            opencvPaint(sign_pred, cv2_img)
+            if FILE_TARGET.ALL | FILE_TARGET.SIGN:
+                sign_pred = sign_out.get(True)
+                opencvPaint(sign_pred, cv2_img)
 
-            # namedWindow("file")
-            # moveWindow('file', 300, 10)
-            # imshow('file', cv2_img)
-            # waitKey()
-            # destroyWindow("file")
+            namedWindow("file")
+            moveWindow('file', 300, 10)
+            imshow('file', cv2_img)
+            waitKey()
+            destroyWindow("file")
         sign_process.terminate()
 
     elif SOURCE == ImgsSource.VIDEO:
