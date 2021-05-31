@@ -15,6 +15,7 @@ NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 TRAIN_POS_FOLDER = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\img"
 INFO_DAT_PATH = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\info.dat"
 BG_FILE = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\neg_imgs\\bg.txt"
+BG_IMG_FOLDER = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Train_Images\\train2014"
 
 
 def copy(name):
@@ -93,7 +94,7 @@ def _augImg(img_name):
     z_angle = [i for i in range(-12, 13, 1)]
     mask_img_folder = "C:\\Users\\Nathan\\Documents\\dataset\\mask"
     pos_img_folder = "C:\\Users\\Nathan\\Documents\\dataset\\cut_img"
-    bg_img_folder = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Train_Images\\train2014"
+    bg_img_folder = BG_IMG_FOLDER
     bg_img_names = os.listdir(bg_img_folder)
     pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
     for n in range(0, 200):
