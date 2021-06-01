@@ -101,7 +101,7 @@ def _augImg(img_name):
     bg_img_folder = BG_IMG_FOLDER
     bg_img_names = os.listdir(bg_img_folder)
     pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
-    for n in range(0, 1000):
+    for n in range(0, 170):
         try:
             bg_img_name = random.sample(bg_img_names, 1)[0]
             rand = random.random()
@@ -259,15 +259,43 @@ def _washFunc(img_name):
 
     gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
     sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray)
-    opencvPaint(sign_detect, cv2_img)
+    paint(sign_detect, cv2_img)
     if len(sign_detect) > 0:
         cv2.imwrite(img_name, cv2_img)
         print("save")
 
 
+SIGN_COUNT = 0
+
+
+def testSignModel():
+    img_folder_path = "C:\\Users\\Nathan\\Downloads\\testset"
+    global SIGN_COUNT
+    for img_name in os.listdir(img_folder_path):
+        img_folder_path = "C:\\Users\\Nathan\\Downloads\\testset"
+        cv2.imread(os.path.join(img_folder_path, img_name))
+        img = cv2.imread(os.path.join(img_folder_path, img_name), cv2.IMREAD_COLOR)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 2)
+        SIGN_COUNT += len(sign_detect)
+        paint(sign_detect, img)
+        cv2.imwrite(img_name, img)
+    print(SIGN_COUNT)
+
+
+# noinspection DuplicatedCode
+def paint(sign_pred, img):
+    if len(sign_pred) > 0:
+        for (x, y, w, h) in sign_pred:
+            xyxy = [x, y, x + w, y + h]
+            label = "prohibit"
+            plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
+
+
 if __name__ == "__main__":
     # writeBG()
-    removeAugment()
-    augmentation()
-    writeInfoDat()
+    # removeAugment()
+    # augmentation()
+    # writeInfoDat()
+    testSignModel()
     print("success")
