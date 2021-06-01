@@ -10,12 +10,16 @@ from shutil import copyfile
 import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
+from utils.plots import plot_one_box
+
+from globals import SIGN_CLASSIFIER
 
 NEG_IMGS_FOLDER_PATH = "../../dataset/TrafficBlockSign/neg_imgs/imgs"
 TRAIN_POS_FOLDER = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\img"
 INFO_DAT_PATH = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\info.dat"
 BG_FILE = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\neg_imgs\\bg.txt"
 BG_IMG_FOLDER = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Train_Images\\train2014"
+BG_IMG_FOLDER2 = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Val_Images\\val2014"
 
 
 def copy(name):
@@ -85,7 +89,7 @@ def augmentation():
     img_names = os.listdir(d)
     # for img_name in img_names:
     #     _augImg(img_name)
-    with pool.Pool() as p:
+    with pool.Pool(4) as p:
         p.map(func=_augImg, iterable=img_names)
 
 
@@ -97,7 +101,7 @@ def _augImg(img_name):
     bg_img_folder = BG_IMG_FOLDER
     bg_img_names = os.listdir(bg_img_folder)
     pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
-    for n in range(0, 200):
+    for n in range(0, 1000):
         try:
             bg_img_name = random.sample(bg_img_names, 1)[0]
             rand = random.random()
@@ -155,8 +159,9 @@ def _adjustBrightAndContrast(img):
 def writeInfoDat():
     with open(INFO_DAT_PATH, "w") as file:
         names = os.listdir(TRAIN_POS_FOLDER)
-        with pool.Pool() as p:
+        with pool.ThreadPool() as p:
             data = p.map(_getPosLabel, names)
+        random.shuffle(data)
         file.writelines(data)
 
 
@@ -210,6 +215,8 @@ def writeBG():
     p2 = "C:\\Users\\Nathan\\Downloads\\COCO_COCO_2014_Val_Images\\val2014"
     l1 = os.listdir(p1)
     l2 = os.listdir(p2)
+    random.shuffle(l1)
+    random.shuffle(l2)
 
     bg = open(BG_FILE, "w")
 
@@ -228,6 +235,34 @@ def writeBG():
         p.map(_writeBG2, l2)
 
     bg.close()
+
+
+def washDataset():
+    imgs_folder_path = BG_IMG_FOLDER2
+    img_names_list = os.listdir(imgs_folder_path)
+    with pool.Pool(4) as p:
+        p.map(_washFunc, img_names_list)
+
+
+# noinspection DuplicatedCode
+def opencvPaint(sign_pred, img):
+    if len(sign_pred) > 0:
+        for (x, y, w, h) in sign_pred:
+            xyxy = [x, y, x + w, y + h]
+            label = "prohibit"
+            plot_one_box(xyxy, img, label=label, color=[255, 153, 0], line_thickness=2)
+
+
+def _washFunc(img_name):
+    img_path = os.path.join(BG_IMG_FOLDER2, img_name)
+    cv2_img = cv2.imread(img_path)
+
+    gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
+    sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray)
+    opencvPaint(sign_detect, cv2_img)
+    if len(sign_detect) > 0:
+        cv2.imwrite(img_name, cv2_img)
+        print("save")
 
 
 if __name__ == "__main__":
