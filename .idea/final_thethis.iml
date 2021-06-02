@@ -13,6 +13,7 @@
       <excludeFolder url="file://$MODULE_DIR$/src/weights" />
       <excludeFolder url="file://$MODULE_DIR$/src/resources" />
       <excludeFolder url="file://$MODULE_DIR$/src/outdated" />
+      <excludeFolder url="file://$MODULE_DIR$/src/test_output" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.8 (yolo_torch_thesis)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
