@@ -94,14 +94,14 @@ def augmentation():
 
 
 def _augImg(img_name):
-    xy_angle = [i for i in range(-36, 37, 1)]
-    z_angle = [i for i in range(-12, 13, 1)]
+    xy_angle = [i for i in range(-40, 41, 1)]
+    z_angle = [i for i in range(-15, 16, 1)]
     mask_img_folder = "C:\\Users\\Nathan\\Documents\\dataset\\mask"
     pos_img_folder = "C:\\Users\\Nathan\\Documents\\dataset\\cut_img"
     bg_img_folder = BG_IMG_FOLDER
     bg_img_names = os.listdir(bg_img_folder)
     pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
-    for n in range(0, 170):
+    for n in range(0, 50):
         try:
             bg_img_name = random.sample(bg_img_names, 1)[0]
             rand = random.random()
@@ -143,8 +143,8 @@ def _augImg(img_name):
     print(img_name)
 
 
-c = [i for i in range(-70, 71, 1)]
-b = [i for i in range(-70, 71, 1)]
+c = [i for i in range(-75, 76, 1)]
+b = [i for i in range(-75, 76, 1)]
 
 
 def _adjustBrightAndContrast(img):
@@ -172,7 +172,9 @@ def _getPosLabel(name):
 
 
 def stackImage():
-    p = "D:\\cutted_img"
+    # p = "C:\\Users\\Nathan\\Documents\\dataset\\TrafficBlockSign\\pos_imgs\\img"
+    # p = "C:\\Users\\Nathan\\Documents\\dataset\\cut_img"
+    p = "C:\\Users\\Nathan\\Documents\\dataset\\mask"
     img_names = os.listdir(p)
     sample_names = random.sample(img_names, 15)
     sample_imgs = [cv2.imread(os.path.join(p, name), cv2.IMREAD_COLOR) for name in sample_names]
@@ -182,7 +184,7 @@ def stackImage():
         row = idx // 5
         col = idx % 5
         stack[row * 100:(row + 1) * 100, col * 100:(col + 1) * 100] = img
-    cv2.imwrite("origin_stack.png", stack)
+    cv2.imwrite("stack.png", stack)
     pass
 
 
@@ -279,7 +281,7 @@ def testSignModel():
         sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 2)
         SIGN_COUNT += len(sign_detect)
         paint(sign_detect, img)
-        cv2.imwrite(img_name, img)
+        cv2.imwrite(os.path.join("./test_output"), img)
     print(SIGN_COUNT)
 
 
@@ -298,4 +300,6 @@ if __name__ == "__main__":
     # augmentation()
     # writeInfoDat()
     testSignModel()
+    # processSpeedSign()
+    # stackImage()
     print("success")
