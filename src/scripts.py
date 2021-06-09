@@ -193,7 +193,7 @@ def signPredict(in_queue: Queue, out_queue: Queue):
         img = in_queue.get(True)
         img = pil_to_cv2(img)
         gray = cvtColor(img, COLOR_BGR2GRAY)
-        sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 2)
+        sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 3)
         out_queue.put(sign_detect, True)
 
 
@@ -211,6 +211,6 @@ def tensorShape(tensor_img):
 
 if __name__ == "__main__":
     # RunModels(SOURCE=ImgsSource.VIDEO, SOURCE_PATH="./resources/demo.mov")
-    RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="C:\\Users\\Nathan\\Documents\\dataset\\sign_pos_test")
-    # RunModels(SOURCE=ImgsSource.CAMERA)
+    # RunModels(SOURCE=ImgsSource.FILE, SOURCE_PATH="C:\\Users\\Nathan\\Documents\\dataset\\sign_pos_test")
+    RunModels(SOURCE=ImgsSource.CAMERA)
     print("success")

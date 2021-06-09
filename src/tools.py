@@ -93,6 +93,7 @@ def augmentation():
         p.map(func=_augImg, iterable=img_names)
 
 
+# noinspection PyBroadException
 def _augImg(img_name):
     xy_angle = [i for i in range(-40, 41, 1)]
     z_angle = [i for i in range(-15, 16, 1)]
@@ -101,7 +102,7 @@ def _augImg(img_name):
     bg_img_folder = BG_IMG_FOLDER
     bg_img_names = os.listdir(bg_img_folder)
     pos_img = cv2.imread(os.path.join(pos_img_folder, img_name), cv2.IMREAD_COLOR)
-    for n in range(0, 50):
+    for n in range(0, 63):
         try:
             bg_img_name = random.sample(bg_img_names, 1)[0]
             rand = random.random()
@@ -281,7 +282,7 @@ def testSignModel():
         sign_detect = SIGN_CLASSIFIER.detectMultiScale(gray, 1.1, 2)
         SIGN_COUNT += len(sign_detect)
         paint(sign_detect, img)
-        cv2.imwrite(os.path.join("./test_output"), img)
+        cv2.imwrite(os.path.join("./test_output", img_name), img)
     print(SIGN_COUNT)
 
 
@@ -299,7 +300,7 @@ if __name__ == "__main__":
     # removeAugment()
     # augmentation()
     # writeInfoDat()
-    testSignModel()
+    # testSignModel()
     # processSpeedSign()
     # stackImage()
     print("success")

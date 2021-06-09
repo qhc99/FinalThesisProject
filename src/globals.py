@@ -14,7 +14,7 @@ FONT = cv2.FONT_HERSHEY_SIMPLEX
 MODEL_NUM = "1"
 
 # 1: 381
-CASCADE = "./parameters/trained/better.xml"
+CASCADE = "./parameters/trained/lbp_fast.xml"
 YOLOV5S_PATH = "./parameters/original/yolov5s.pt"
 
 GPU_DEVICE = select_device('')
