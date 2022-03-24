@@ -1,1 +1,1 @@
-Using pretrained YOLOv5 model and LBP cascade classifier model for inhibition sign.
+Using LBP cascade classifier model and pretrained YOLOv5 model.
